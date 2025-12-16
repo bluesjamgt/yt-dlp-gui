@@ -1,0 +1,14 @@
+__pycache__/
+build/
+dist/
+*.spec
+*.exe
+*.json
+*.mp4
+*.mp3
+*.mkv
+*.webm
+*.part
+*.ytdl
+
+.env

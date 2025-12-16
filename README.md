@@ -29,7 +29,7 @@ This utility automates the execution of `yt-dlp` commands through a user-friendl
 
 \## ◼ Installation \& Usage
 
-1\.  Navigate to the \*\*\[Releases](https://github.com/bluesjamgt/yt-dlp-gui/releases/latest)\*\* section.
+1\.  Navigate to the \*\*\[Releases](https://github.com/bluesjamgt/yt-dlp-gui/releases/latest) \*\* section.
 
 2\.  Download the latest executable binary (`.exe`).
 

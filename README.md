@@ -1,4 +1,4 @@
-\# yt-dlp Downloader GUI v1.4.10
+\# yt-dlp Downloader GUI v1.4.x
 
 ![2025-12-17_034311](https://github.com/user-attachments/assets/42151006-79bc-45ae-af07-82e210517334)
 

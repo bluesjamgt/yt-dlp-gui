@@ -1,6 +1,6 @@
 \# yt-dlp Downloader GUI v1.4.x
 
-![2025-12-17_034311](https://github.com/user-attachments/assets/42151006-79bc-45ae-af07-82e210517334)
+![2025-12-17_034311](https://raw.githubusercontent.com/bluesjamgt/yt-dlp-gui/17c443ef710a5bf0576a1d09c69e75d0f3d7d967/preview.jpg)
 
 
 A lightweight, standalone graphical interface for \[yt-dlp](https://github.com/yt-dlp/yt-dlp). Designed for streamlined media extraction without command-line interaction.

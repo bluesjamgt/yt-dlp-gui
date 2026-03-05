@@ -1,4 +1,4 @@
-# yt-dlp Downloader GUI v1.4.11x (by Bluz J & Nai 2026.01.02)
+# yt-dlp Downloader GUI v1.4.14 (by Bluz J & Nai 2026.03.05)
 import os
 import json
 import tkinter as tk
@@ -41,21 +41,52 @@ preview_tree = None
 cancel_event, download_thread, loading_animation_id = threading.Event(), None, None
 loading_animation_state, last_sort_column, sort_direction = 0, "", "ascending"
 
+# --- I18N Dictionary ---
+I18N = {
+    "en": {
+        "url": "URL:", "analyze": "Analyze", "limit": "Limit (0=All):",
+        "type": "Type:", "res": "Res:", "audio": "Audio:", "path": "Path:",
+        "browse": "Browse...", "open": "Open", "embed_thumb": "Embed Thumbnail",
+        "add_track": "Add Track Num", "save_settings": "Save Settings",
+        "dl_subtitles": "Download Subtitles", "preview": "Preview:",
+        "refresh": "Refresh", "clear": "Clear", "select_all": "Select All",
+        "select_new": "Select New", "download": "Download", "cancel": "Cancel",
+        "log": "Log:", "status_analyzing": "Analyzing",
+        "msg_select": "Please select items to download.",
+        "col_url": "URL", "col_title": "Title", "col_duration": "Duration", "col_lastdl": "Last DL",
+        "radio_video": "Video", "radio_audio": "Audio", "radio_cover": "Cover", "radio_subtitle": "Subtitle"
+    },
+    "zh-TW": {
+        "url": "影片網址:", "analyze": "分析", "limit": "解析限制 (0=全部):",
+        "type": "格式類型:", "res": "最高畫質:", "audio": "音質:", "path": "儲存路徑:",
+        "browse": "瀏覽...", "open": "開啟資料夾", "embed_thumb": "寫入封面圖",
+        "add_track": "加入音軌序號", "save_settings": "儲存當前設定",
+        "dl_subtitles": "同時下載字幕", "preview": "下載預覽清單:",
+        "refresh": "重整紀錄", "clear": "清除選取", "select_all": "全選",
+        "select_new": "選取未下載", "download": "開始下載", "cancel": "取消",
+        "log": "執行紀錄:", "status_analyzing": "分析中",
+        "msg_select": "請選擇要下載的項目。",
+        "col_url": "網址", "col_title": "影片標題", "col_duration": "影片時長", "col_lastdl": "最後下載時間",
+        "radio_video": "影片", "radio_audio": "純音訊", "radio_cover": "封面圖", "radio_subtitle": "字幕"
+    }
+}
+
 # Default configuration
 config = {
     "download_path": os.path.expanduser('~/Downloads'), 
     "embed_thumbnail": True,
-    "video_limit": "1440p", 
+    "video_limit": "1080p", 
     "audio_quality": "320 kbps (Best)", 
     "video_format": "mp4",
     "audio_format": "mp3", 
     "cover_format": "webp",
     "subtitle_format": "srt",
     "download_subtitles_enabled": False,
-    "subtitle_language": "en", 
+    "subtitle_language": "zh-TW", 
     "add_track_number": True,
     "url_history": [],
-    "playlist_limit": 0 
+    "playlist_limit": 0,
+    "language": "zh-TW"
 }
 
 # Load configuration
@@ -94,19 +125,19 @@ def save_config():
             if "url_history" in temp_config:
                 temp_config["url_history"] = list(dict.fromkeys(temp_config["url_history"]))[:20]
             
-            try:
-                temp_config["playlist_limit"] = int(playlist_limit_spin.get())
-            except:
-                temp_config["playlist_limit"] = 0
+            try: temp_config["playlist_limit"] = int(playlist_limit_spin.get())
+            except: temp_config["playlist_limit"] = 0
+            
+            temp_config["language"] = current_lang_var.get()
 
-            json.dump(temp_config, f, indent=4)
+            json.dump(temp_config, f, indent=4, ensure_ascii=False)
     except IOError as e:
         log_message(f"Error saving config: {e}")
 
 def save_history():
     try:
         with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-            json.dump(download_history, f, indent=4)
+            json.dump(download_history, f, indent=4, ensure_ascii=False)
     except IOError as e:
         log_message(f"Error saving history: {e}")
 
@@ -146,8 +177,6 @@ def delete_url_history():
         url_combo.set("")
         save_config()
         log_message(f"URL Deleted: {url}")
-    else:
-        log_message("URL not found in history.")
 
 def update_url_combo_values():
     history = config.get("url_history", [])
@@ -155,11 +184,46 @@ def update_url_combo_values():
     if history and not url_combo.get(): url_combo.current(0)
 
 # --- UI Helpers ---
+def update_ui_language(*args):
+    lang = I18N.get(current_lang_var.get(), I18N["en"])
+    lbl_url.config(text=lang["url"])
+    btn_analyze.config(text=lang["analyze"])
+    lbl_limit.config(text=lang["limit"])
+    lbl_type.config(text=lang["type"])
+    radio_video.config(text=lang["radio_video"])
+    radio_audio.config(text=lang["radio_audio"])
+    radio_cover.config(text=lang["radio_cover"])
+    radio_subtitle.config(text=lang["radio_subtitle"])
+    lbl_res.config(text=lang["res"])
+    lbl_audio.config(text=lang["audio"])
+    lbl_path.config(text=lang["path"])
+    btn_browse.config(text=lang["browse"])
+    btn_open.config(text=lang["open"])
+    chk_embed.config(text=lang["embed_thumb"])
+    chk_track.config(text=lang["add_track"])
+    btn_save_settings.config(text=lang["save_settings"])
+    chk_dl_subtitles.config(text=lang["dl_subtitles"])
+    lbl_preview.config(text=lang["preview"])
+    btn_refresh.config(text=lang["refresh"])
+    btn_clear.config(text=lang["clear"])
+    btn_select_all.config(text=lang["select_all"])
+    btn_select_new.config(text=lang["select_new"])
+    download_btn.config(text=lang["download"])
+    cancel_btn.config(text=lang["cancel"])
+    lbl_log.config(text=lang["log"])
+    
+    for col, key in [("url", "col_url"), ("title", "col_title"), ("duration", "col_duration"), ("last_download", "col_lastdl")]:
+        current_text = preview_tree.heading(col, 'text')
+        arrow = " 🔽" if "🔽" in current_text else " 🔼" if "🔼" in current_text else ""
+        preview_tree.heading(col, text=f"{lang[key]}{arrow}")
+    config["language"] = current_lang_var.get()
+    save_config()
 
 def start_loading_animation():
     global loading_animation_id, loading_animation_state
+    lang = I18N.get(current_lang_var.get(), I18N["en"])
     states, loading_animation_state = ["", ".", "..", "..."], (loading_animation_state + 1) % 4
-    loading_label.config(text=f"Analyzing{states[loading_animation_state]}")
+    loading_label.config(text=f"{lang['status_analyzing']}{states[loading_animation_state]}")
     loading_animation_id = root.after(500, start_loading_animation)
 
 def stop_loading_animation():
@@ -183,10 +247,8 @@ def parse_video():
     add_url_history()
     log_message("Analyzing..."); start_loading_animation()
     
-    try:
-        limit_count = int(playlist_limit_spin.get())
-    except ValueError:
-        limit_count = 0
+    try: limit_count = int(playlist_limit_spin.get())
+    except ValueError: limit_count = 0
         
     def task():
         try:
@@ -195,7 +257,6 @@ def parse_video():
                 "ignoreerrors": True,
                 "extractor_args": {'youtube': ['player_client=default']}
             }
-            
             if limit_count > 0:
                 ydl_opts["playlistend"] = limit_count
                 log_message(f"Limit applied: parsing first {limit_count} videos only.")
@@ -220,7 +281,8 @@ def parse_video():
                     add_preview_item(idx, entry, "playlist_video", playlist_title, channel_name)
                 log_message(f"Analysis complete. Found {len(entries)} items.")
             else:
-                add_preview_item(1, info, "video", channel_name=sanitize_filename(info.get("uploader", "Unknown Channel")))
+                channel_name = sanitize_filename(info.get("uploader", "Unknown Channel"))
+                add_preview_item(1, info, "video", channel_name=channel_name)
                 update_video_resolution_combo(info.get("formats", []))
                 log_message("Analysis complete.")
         except Exception as e: log_message(f"Critical error during analysis: {e}")
@@ -232,9 +294,7 @@ def add_preview_item(index, entry, content_type, playlist_title="", channel_name
     url = entry.get("webpage_url") or entry.get("url") or "N/A"
     duration, duration_text = entry.get("duration"), "Unknown"
     if duration is not None: duration_text = f"{int(duration)//60:02d}:{int(duration)%60:02d}"
-    
-    if entry.get("live_status") == "is_upcoming":
-        duration_text = "Upcoming"
+    if entry.get("live_status") == "is_upcoming": duration_text = "Upcoming"
         
     last_download = download_history.get(video_id, "Not Downloaded")
     subtitles = entry.get("subtitles")
@@ -254,19 +314,12 @@ def refresh_history():
     global download_history
     try:
         if os.path.exists(HISTORY_FILE):
-            with open(HISTORY_FILE, "r", encoding="utf-8") as f:
-                download_history = json.load(f)
-        else:
-            download_history = {}
-    except (IOError, json.JSONDecodeError) as e:
-        log_message(f"Error refreshing history: {e}")
-        return
-
+            with open(HISTORY_FILE, "r", encoding="utf-8") as f: download_history = json.load(f)
+    except Exception as e: log_message(f"Error refreshing history: {e}"); return
     for item_id in preview_tree.get_children():
         values = list(preview_tree.item(item_id, "values"))
-        video_id = values[5]
-        if video_id in download_history:
-            values[4] = download_history[video_id]
+        if values[5] in download_history:
+            values[4] = download_history[values[5]]
             preview_tree.item(item_id, values=values)
     log_message("History refreshed.")
 
@@ -277,22 +330,25 @@ def deselect_all():
     for item in preview_tree.get_children(): preview_tree.set(item, "check", "☐")
     update_subtitle_controls()
 def on_tree_selection_change(event): update_subtitle_controls()
+def select_undownloaded():
+    for item_id in preview_tree.get_children():
+        if preview_tree.item(item_id, "values")[4] == "Not Downloaded":
+            preview_tree.set(item_id, "check", "☑")
+    update_subtitle_controls()
 
 def update_subtitle_controls():
     if preview_tree is None: return
-
     selected_items = [i for i in preview_tree.get_children() if preview_tree.set(i, "check") == "☑"]
     all_sub_langs, has_subtitles = set(), False
     for item_id in selected_items:
-        values = preview_tree.item(item_id, "values"); sub_langs_json = values[9]
+        sub_langs_json = preview_tree.item(item_id, "values")[9]
         if sub_langs_json:
             try:
                 langs = json.loads(sub_langs_json)
                 if langs: has_subtitles = True; all_sub_langs.update(langs)
-            except json.JSONDecodeError: pass
+            except: pass
     
     is_subtitle_mode = download_type_var.get() == "subtitle"
-    
     if has_subtitles:
         subtitle_lang_combo.config(state="readonly")
         lang_values = ["all"] + sorted(list(all_sub_langs))
@@ -301,37 +357,17 @@ def update_subtitle_controls():
         if current_lang in lang_values: subtitle_lang_combo.set(current_lang)
         elif "zh-TW" in lang_values: subtitle_lang_combo.set("zh-TW")
         elif lang_values: subtitle_lang_combo.set(lang_values[0])
-        else: subtitle_lang_combo.set("all")
         
         if is_subtitle_mode:
-             download_subtitles_check.config(state="disabled") 
-             download_subtitles_var.set(True)
-        else:
-             download_subtitles_check.config(state="normal")
-             
+             chk_dl_subtitles.config(state="disabled"); download_subtitles_var.set(True)
+        else: chk_dl_subtitles.config(state="normal")
     else:
-        download_subtitles_check.config(state="disabled"); download_subtitles_var.set(False)
+        chk_dl_subtitles.config(state="disabled"); download_subtitles_var.set(False)
         subtitle_lang_combo.config(state="disabled"); subtitle_lang_combo.set("")
-
-def set_default_path():
-    default_path = os.path.expanduser('~/Downloads')
-    download_path_entry.delete(0, tk.END); download_path_entry.insert(0, default_path)
-    log_message("Path set to default Downloads folder.")
 
 def select_download_path():
     path = filedialog.askdirectory()
-    if path:  
-        download_path_entry.delete(0, tk.END)  
-        download_path_entry.insert(0, path)    
-def save_download_path():
-    path = download_path_entry.get().strip()
-    if path:
-        config["download_path"] = os.path.normpath(path)
-        save_config()
-        log_message("Path saved.")
-    else:
-        log_message("Error: Path cannot be empty.")
-
+    if path: download_path_entry.delete(0, tk.END); download_path_entry.insert(0, path) 
 def open_download_path():
     path = download_path_entry.get().strip()
     if os.path.exists(path): open_folder(path) 
@@ -350,12 +386,12 @@ def save_limit_settings():
             "download_subtitles_enabled": download_subtitles_var.get(),
             "subtitle_language": subtitle_lang_combo.get(),
             "add_track_number": add_track_number_var.get(),
-            "playlist_limit": int(playlist_limit_spin.get()) 
+            "playlist_limit": int(playlist_limit_spin.get()),
+            "language": current_lang_var.get()
         })
         save_config() 
         log_message("Configuration saved successfully!")
-    except Exception as e:
-        log_message(f"Error saving settings: {e}")
+    except Exception as e: log_message(f"Error saving settings: {e}")
 
 def update_format_combobox_visibility(*args):
     download_type = download_type_var.get()
@@ -363,7 +399,6 @@ def update_format_combobox_visibility(*args):
     if download_type == "video": video_format_combo.pack(side="left", padx=5)
     elif download_type == "audio": audio_format_combo.pack(side="left", padx=5)
     elif download_type == "cover": cover_format_combo.pack(side="left", padx=5)
-    
     update_subtitle_controls()
 
 def ask_overwrite(filepath):
@@ -385,45 +420,25 @@ def start_download_thread():
 
 def cancel_download():
     global download_thread; log_message("Cancelling..."); cancel_event.set()
-    if download_thread and download_thread.is_alive(): download_thread.join()
-    download_btn.config(state="normal"); cancel_btn.config(state="disabled"); log_message("Download cancelled.")
-
-def toggle_check_with_space(event):
-    for item_id in preview_tree.selection():
-        current_value = preview_tree.set(item_id, "check")
-        preview_tree.set(item_id, "check", "☑" if current_value == "☐" else "☐")
-    update_subtitle_controls()
-
-def select_undownloaded():
-    for item_id in preview_tree.get_children():
-        values = preview_tree.item(item_id, "values")
-        last_download_status = values[4]
-        if last_download_status == "Not Downloaded":
-            preview_tree.set(item_id, "check", "☑")
-    update_subtitle_controls()
-
+    download_btn.config(state="normal"); cancel_btn.config(state="disabled")
 
 def download():
     download_type = download_type_var.get()
-    
     target_ext = ""
     if download_type == "video": target_ext = video_format_combo.get()
     elif download_type == "audio": target_ext = audio_format_combo.get()
     elif download_type == "subtitle": target_ext = "srt"
+    elif download_type == "cover": target_ext = cover_format_combo.get()
     
-    ffmpeg_exe_path = 'ffmpeg'
+    ffmpeg_exe = "ffmpeg.exe" if platform.system() == "Windows" else "ffmpeg"
+    base_path = sys._MEIPASS if getattr(sys, 'frozen', False) else script_dir
+    ffmpeg_exe_path = os.path.join(base_path, ffmpeg_exe)
+
     ydl_opts = {}
-
-    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-        ffmpeg_exe_path = os.path.join(sys._MEIPASS, 'ffmpeg.exe')
-        ydl_opts['ffmpeg_location'] = sys._MEIPASS
-
-    needs_ffmpeg = target_ext in ["mp3", "mkv", "srt"]
-    if needs_ffmpeg and not shutil.which(ffmpeg_exe_path.replace('.exe','')):
-        log_message(f"Warning: ffmpeg not found! Conversion might fail.")
+    if os.path.exists(ffmpeg_exe_path): ydl_opts['ffmpeg_location'] = ffmpeg_exe_path
 
     checked_items = [i for i in preview_tree.get_children() if preview_tree.set(i, "check") == "☑"]
-    if not checked_items: return log_message("Please select items to download.")
+    if not checked_items: return log_message(I18N.get(current_lang_var.get(), I18N["en"])["msg_select"])
     
     download_path, total = download_path_entry.get().strip(), len(checked_items)
     overwrite_action = None
@@ -431,165 +446,86 @@ def download():
     for idx, item in enumerate(checked_items, start=1):
         if cancel_event.is_set(): break
         values = preview_tree.item(item, "values")
-        (url, title, video_id, content_type, playlist_title, 
-         channel_name, playlist_index) = (values[1], values[2], values[5], values[6], 
-                                          values[7], values[8], values[10])
+        (url, title, video_id, content_type, playlist_title, channel_name, playlist_index) = (
+            values[1], values[2], values[5], values[6], values[7], values[8], values[10])
         
-        if not url or url == "N/A": log_message(f"Skipping '{title}' (No URL)."); continue
+        if not url or url == "N/A": continue
 
-        # --- Folder Structure ---
+        # 支援多語系(UTF-8)路徑建立，直接使用 os.makedirs 避免舊版 subprocess 編碼崩潰
         sub_folder = playlist_title if content_type == "playlist_video" else "Videos"
         final_download_path = os.path.join(download_path, channel_name, sub_folder)
-        if not os.path.exists(final_download_path): os.makedirs(final_download_path)
+        os.makedirs(final_download_path, exist_ok=True) 
 
         final_title = title
         if add_track_number_var.get() and content_type == "playlist_video" and playlist_index:
             try: final_title = f"{int(playlist_index):02d} - {title}"
-            except (ValueError, TypeError): pass
+            except: pass
         
-        base_outtmpl = os.path.join(final_download_path, final_title)
-        
-        temp_ext = ""
+        base_outtmpl = os.path.join(final_download_path, sanitize_filename(final_title))
         log_message(f"⬇ ({idx}/{total}) Processing: {final_title}")
         
         ydl_opts.update({
-            "quiet": True, 
-            "progress_hooks": [progress_hook], 
-            "noplaylist": True, 
-            "outtmpl": base_outtmpl,
+            "quiet": True, "progress_hooks": [progress_hook], "noplaylist": True, 
+            "outtmpl": f"{base_outtmpl}.%(ext)s", 
             "extractor_args": {'youtube': ['player_client=default']}
         })
         
-        pps_common = []
+        pps = []
         if embed_thumbnail_var.get():
-             ydl_opts["writethumbnail"] = True
-             pps_common.append({'key': 'FFmpegThumbnailsConvertor', 'format': 'jpg'})
-             ydl_opts["addmetadata"] = True
+            ydl_opts["writethumbnail"] = True
+            pps.append({'key': 'FFmpegThumbnailsConvertor', 'format': 'jpg'})
+            pps.append({'key': 'EmbedThumbnail'})
+            pps.append({'key': 'FFmpegMetadata'})
 
         should_download_sub = (download_type == "subtitle") or (download_subtitles_var.get())
-        
         if should_download_sub:
-             selected_lang = subtitle_lang_combo.get()
-             ydl_opts.update({
-                 "writesubtitles": True,
-                 "writeautomaticsub": False,
-                 "subtitlesformat": "srt",
-                 "postprocessors": [{'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'}]
-             })
-             if selected_lang and selected_lang != "all":
-                 ydl_opts['subtitleslangs'] = [selected_lang]
-             else:
-                 ydl_opts['subtitleslangs'] = ['all', '-live_chat']
+            selected_lang = subtitle_lang_combo.get()
+            ydl_opts.update({"writesubtitles": True, "writeautomaticsub": False, "subtitlesformat": "srt"})
+            pps.append({'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'})
+            ydl_opts['subtitleslangs'] = [selected_lang] if selected_lang and selected_lang != "all" else ['all', '-live_chat']
 
+        # Core Type Logic
         if download_type == "video":
-            temp_ext = "mp4"
             height_limit = video_limit_combo.get().replace("p", "")
-            ydl_opts.update({"format": f"bestvideo[height<={height_limit}]+bestaudio/best[height<={height_limit}]", "merge_output_format": temp_ext})
-            
-            if embed_thumbnail_var.get():
-                pps_common.append({'key': 'EmbedThumbnail'})
-                pps_common.append({'key': 'FFmpegMetadata'})
-            
-            if pps_common:
-                ydl_opts.update({"postprocessors": pps_common})
-
-        elif download_type == "audio":
-            temp_ext = "m4a"
-            audio_pps = []
-            if embed_thumbnail_var.get():
-                audio_pps.extend(pps_common)
-                audio_pps.append({'key': 'EmbedThumbnail'})
-                
-            audio_pps.append({'key': 'FFmpegExtractAudio', 'preferredcodec': temp_ext})
-            
-            if embed_thumbnail_var.get():
-                audio_pps.append({'key': 'FFmpegMetadata'})
-                
-            ydl_opts.update({"format": "bestaudio/best", "postprocessors": audio_pps})
-
-
-        elif download_type == "cover":
-            target_ext, temp_ext = cover_format_combo.get(), cover_format_combo.get()
+            # 4K/2K Fix: 直接讓 yt-dlp 依照指定格式 (mp4/mkv) 負責合併，完全免除手動 subprocess 呼叫
             ydl_opts.update({
-                "writethumbnail": True, 
-                "skip_download": True, 
-                "ignoreerrors": True, 
-                "postprocessors": [{'key': 'FFmpegThumbnailsConvertor', 'format': temp_ext}]
+                "format": f"bestvideo[height<={height_limit}]+bestaudio/best", 
+                "merge_output_format": target_ext
             })
-        
+        elif download_type == "audio":
+            quality_str = audio_quality_combo.get()
+            bitrate = re.search(r'(\d+)', quality_str).group(1) if re.search(r'(\d+)', quality_str) else "192"
+            ydl_opts.update({"format": "bestaudio/best"})
+            pps.append({'key': 'FFmpegExtractAudio', 'preferredcodec': target_ext, 'preferredquality': bitrate})
+        elif download_type == "cover":
+            ydl_opts.update({"writethumbnail": True, "skip_download": True, "ignoreerrors": True})
+            pps.append({'key': 'FFmpegThumbnailsConvertor', 'format': target_ext})
         elif download_type == "subtitle":
             ydl_opts.update({"skip_download": True})
-            target_ext = "srt"
-            temp_ext = "srt"
 
+        if pps: ydl_opts["postprocessors"] = pps
+
+        # File exist validation
         check_filepath = f"{base_outtmpl}.{target_ext}"
         if download_type == "subtitle":
-             lang_code = subtitle_lang_combo.get()
-             possible_sub = f"{base_outtmpl}.{lang_code}.srt"
-             if os.path.exists(possible_sub): check_filepath = possible_sub
+            lang_code = subtitle_lang_combo.get()
+            possible_sub = f"{base_outtmpl}.{lang_code}.srt"
+            if os.path.exists(possible_sub): check_filepath = possible_sub
 
         if os.path.exists(check_filepath) and download_type != "subtitle":
-             choice = overwrite_action
-             if choice is None:
-                 choice, apply_to_all = ask_overwrite(check_filepath)
-                 if apply_to_all: overwrite_action = choice
-             if choice == "skip": log_message(f"Skipping: {title}"); continue
-             elif choice != "replace": log_message("Cancelled."); break
+            choice = overwrite_action
+            if choice is None:
+                choice, apply_to_all = ask_overwrite(check_filepath)
+                if apply_to_all: overwrite_action = choice
+            if choice == "skip": log_message(f"Skipping: {title}"); continue
+            elif choice != "replace": log_message("Cancelled."); break
         
         try:
             with YoutubeDL(ydl_opts) as ydl: ydl.download([url])
+            log_message(f"Saved: {final_title}")
         except Exception as e:
             log_message(f"Warning processing '{final_title}': {e}")
         
-        if download_type in ["video", "audio"]:
-            temp_filepath = f"{base_outtmpl}.{temp_ext}"
-            final_filepath = f"{base_outtmpl}.{target_ext}"
-            
-            if not os.path.exists(temp_filepath):
-                 if os.path.exists(final_filepath):
-                     temp_filepath = final_filepath
-                 else:
-                    if os.path.exists(f"{base_outtmpl}.webm"): temp_filepath = f"{base_outtmpl}.webm"
-                    else: log_message(f"Warning: Primary file not found (could be merged)."); continue
-
-            if temp_ext != target_ext:
-                log_message(f"Converting {temp_ext} to {target_ext}...")
-                ffmpeg_cmd = []
-                if target_ext == "mkv":
-                    ffmpeg_cmd = [ffmpeg_exe_path, '-y', '-i', temp_filepath, '-codec', 'copy', final_filepath]
-                elif target_ext == "mp3":
-                    quality_str = audio_quality_combo.get()
-                    bitrate = re.search(r'(\d+)', quality_str).group(1) if re.search(r'(\d+)', quality_str) else "192"
-                    ffmpeg_cmd = [ffmpeg_exe_path, '-y', '-i', temp_filepath, '-vn', '-codec:a', 'libmp3lame', '-b:a', f'{bitrate}k', final_filepath]
-
-                if ffmpeg_cmd:
-                    try:
-                        startupinfo = None
-                        if platform.system() == "Windows":
-                            startupinfo = subprocess.STARTUPINFO(); startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-                        subprocess.run(ffmpeg_cmd, check=True, startupinfo=startupinfo, capture_output=True)
-                        log_message(f"Conversion successful.")
-                        if os.path.exists(temp_filepath) and temp_filepath != final_filepath:
-                             os.remove(temp_filepath)
-                    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-                        log_message(f"FFmpeg conversion failed! Keeping original format.")
-            else:
-                if temp_filepath != final_filepath and os.path.exists(temp_filepath):
-                    os.rename(temp_filepath, final_filepath)
-            
-            log_message(f"Saved to: {final_filepath}")
-        
-        elif download_type == "subtitle":
-             log_message(f"Subtitle download requested.")
-        
-        elif download_type == "cover":
-             final_cover_path = f"{base_outtmpl}.{target_ext}"
-             if os.path.exists(final_cover_path):
-                 log_message(f"Cover downloaded.")
-             else:
-                 log_message(f"Cover process finished.")
-
-
         download_history[video_id] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         save_history()
 
@@ -599,8 +535,7 @@ def download():
 
 def progress_hook(d):
     if d["status"] == "downloading":
-        percent = d.get("_percent_str", "0%").strip()
-        try: progress_var.set(float(percent.replace("%", "")))
+        try: progress_var.set(float(d.get("_percent_str", "0%").strip().replace("%", "")))
         except ValueError: pass
     elif d["status"] == "finished": progress_var.set(100)
 
@@ -618,23 +553,19 @@ def sort_treeview(column_id):
         return value
     items.sort(key=sort_key, reverse=(sort_direction == "descending"))
     for index, (value, k) in enumerate(items): preview_tree.move(k, "", index)
-    for col in preview_tree["columns"]:
-        heading_text = preview_tree.heading(col, 'text').replace(' 🔽', '').replace(' 🔼', '')
-        if col == column_id:
-            arrow = " 🔽" if sort_direction == "descending" else " 🔼"
-            preview_tree.heading(col, text=f"{heading_text}{arrow}")
-        else: preview_tree.heading(col, text=heading_text)
+    update_ui_language()
 
 # --- GUI Layout ---
 root = tk.Tk()
-root.title("yt-dlp Downloader GUI v1.4.11x (2026.01.02)")
+root.title("yt-dlp Downloader GUI v1.4.14 (2026.03.05)")
 root.geometry("980x920")
 root.resizable(False, False)
 
-# URL Input Area
+# URL Frame
 url_frame = tk.Frame(root)
 url_frame.pack(fill="x", padx=10, pady=5)
-tk.Label(url_frame, text="URL:").pack(side="left")
+lbl_url = tk.Label(url_frame, text="URL:")
+lbl_url.pack(side="left")
 
 url_combo_frame = tk.Frame(url_frame)
 url_combo_frame.pack(side="left", fill="x", expand=True, padx=(5, 0))
@@ -645,31 +576,38 @@ update_url_combo_values()
 tk.Button(url_combo_frame, text="+", command=add_url_history, width=3).pack(side="left", padx=(2,0))
 tk.Button(url_combo_frame, text="-", command=delete_url_history, width=3).pack(side="left", padx=(2,0))
 
-# Playlist Limit
-tk.Label(url_frame, text="Limit (0=All):").pack(side="left", padx=(10, 2))
+lbl_limit = tk.Label(url_frame, text="Limit (0=All):")
+lbl_limit.pack(side="left", padx=(10, 2))
 playlist_limit_spin = tk.Spinbox(url_frame, from_=0, to=9999, width=5)
-playlist_limit_spin.delete(0, "end")
 playlist_limit_spin.insert(0, config.get("playlist_limit", 0))
 playlist_limit_spin.pack(side="left", padx=(0, 5))
 
-tk.Button(url_frame, text="Analyze", command=parse_video, width=10, height=2).pack(side="left", padx=5)
+btn_analyze = tk.Button(url_frame, text="Analyze", command=parse_video, width=10, height=2)
+btn_analyze.pack(side="left", padx=5)
 
-# Settings Area
+# Settings Frame
 settings_frame = tk.Frame(root)
 settings_frame.pack(fill="x", padx=10, pady=5)
 download_type_var = tk.StringVar(value=config.get("download_type", "video"))
-tk.Label(settings_frame, text="Type:").pack(side="left")
-tk.Radiobutton(settings_frame, text="Video", variable=download_type_var, value="video", command=update_format_combobox_visibility).pack(side="left", padx=(10, 0))
-tk.Radiobutton(settings_frame, text="Audio", variable=download_type_var, value="audio", command=update_format_combobox_visibility).pack(side="left", padx=5)
-tk.Radiobutton(settings_frame, text="Cover", variable=download_type_var, value="cover", command=update_format_combobox_visibility).pack(side="left", padx=5)
-tk.Radiobutton(settings_frame, text="Subtitle", variable=download_type_var, value="subtitle", command=update_format_combobox_visibility).pack(side="left", padx=5)
+lbl_type = tk.Label(settings_frame, text="Type:")
+lbl_type.pack(side="left")
+radio_video = tk.Radiobutton(settings_frame, text="Video", variable=download_type_var, value="video", command=update_format_combobox_visibility)
+radio_video.pack(side="left", padx=(10, 0))
+radio_audio = tk.Radiobutton(settings_frame, text="Audio", variable=download_type_var, value="audio", command=update_format_combobox_visibility)
+radio_audio.pack(side="left", padx=5)
+radio_cover = tk.Radiobutton(settings_frame, text="Cover", variable=download_type_var, value="cover", command=update_format_combobox_visibility)
+radio_cover.pack(side="left", padx=5)
+radio_subtitle = tk.Radiobutton(settings_frame, text="Subtitle", variable=download_type_var, value="subtitle", command=update_format_combobox_visibility)
+radio_subtitle.pack(side="left", padx=5)
 
 tk.Label(settings_frame, text=" | ").pack(side="left")
-tk.Label(settings_frame, text="Res:").pack(side="left")
+lbl_res = tk.Label(settings_frame, text="Res:")
+lbl_res.pack(side="left")
 video_limit_combo = ttk.Combobox(settings_frame, values=["2160p", "1440p", "1080p", "720p", "480p", "360p", "240p", "144p"], width=7, state="readonly")
 video_limit_combo.set(config["video_limit"])
 video_limit_combo.pack(side="left", padx=5)
-tk.Label(settings_frame, text="Audio:").pack(side="left")
+lbl_audio = tk.Label(settings_frame, text="Audio:")
+lbl_audio.pack(side="left")
 audio_quality_combo = ttk.Combobox(settings_frame, values=list(AUDIO_QUALITY_MAP.keys()), width=15, state="readonly")
 audio_quality_combo.set(config["audio_quality"])
 audio_quality_combo.pack(side="left", padx=5)
@@ -680,54 +618,78 @@ audio_format_combo.set(config["audio_format"])
 cover_format_combo = ttk.Combobox(settings_frame, values=["webp"], width=5, state="readonly")
 cover_format_combo.set("webp")
 
+# Path Frame
 path_frame = tk.Frame(root)
 path_frame.pack(fill="x", padx=10)
-tk.Label(path_frame, text="Path:").pack(side="left")
+lbl_path = tk.Label(path_frame, text="Path:")
+lbl_path.pack(side="left")
 download_path_entry = tk.Entry(path_frame)
 download_path_entry.insert(0, config["download_path"])
 download_path_entry.pack(side="left", fill="x", expand=True)
-tk.Button(path_frame, text="Browse...", command=select_download_path).pack(side="left", padx=5)
-tk.Button(path_frame, text="Open", command=open_download_path).pack(side="left", padx=5)
+btn_browse = tk.Button(path_frame, text="Browse...", command=select_download_path)
+btn_browse.pack(side="left", padx=5)
+btn_open = tk.Button(path_frame, text="Open", command=open_download_path)
+btn_open.pack(side="left", padx=5)
 
+# Options Frame
 options_frame = tk.Frame(root)
 options_frame.pack(fill="x", padx=10, pady=5, anchor="w")
 embed_thumbnail_var = tk.BooleanVar(value=config["embed_thumbnail"])
-tk.Checkbutton(options_frame, text="Embed Thumbnail", variable=embed_thumbnail_var).pack(side="left")
+chk_embed = tk.Checkbutton(options_frame, text="Embed Thumbnail", variable=embed_thumbnail_var)
+chk_embed.pack(side="left")
 add_track_number_var = tk.BooleanVar(value=config.get("add_track_number", True))
-tk.Checkbutton(options_frame, text="Add Track Num", variable=add_track_number_var).pack(side="left", padx=(10, 0))
-tk.Button(options_frame, text="Save Settings", command=save_limit_settings).pack(side="right")
+chk_track = tk.Checkbutton(options_frame, text="Add Track Num", variable=add_track_number_var)
+chk_track.pack(side="left", padx=(10, 0))
+btn_save_settings = tk.Button(options_frame, text="Save Settings", command=save_limit_settings)
+btn_save_settings.pack(side="right")
 
+# Subtitles Frame
 subtitles_frame = tk.Frame(root)
 subtitles_frame.pack(fill="x", padx=10, pady=(0,5), anchor="w")
 download_subtitles_var = tk.BooleanVar(value=config["download_subtitles_enabled"])
-download_subtitles_check = tk.Checkbutton(subtitles_frame, text="Download Subtitles", variable=download_subtitles_var, state="disabled")
-download_subtitles_check.pack(side="left")
+chk_dl_subtitles = tk.Checkbutton(subtitles_frame, text="Download Subtitles", variable=download_subtitles_var, state="disabled")
+chk_dl_subtitles.pack(side="left")
 subtitle_lang_combo = ttk.Combobox(subtitles_frame, values=[], width=10, state="disabled")
 subtitle_lang_combo.set(config["subtitle_language"])
 subtitle_lang_combo.pack(side="left", padx=5)
 loading_label = tk.Label(subtitles_frame, text="", width=15)
 loading_label.pack(side="left", padx=5)
 
+# Preview Frame
 preview_frame = tk.Frame(root)
 preview_frame.pack(fill="both", expand=True, padx=10)
 preview_control_frame = tk.Frame(preview_frame)
 preview_control_frame.pack(fill="x")
-tk.Label(preview_control_frame, text="Preview:").pack(side="left", pady=(5,0))
-tk.Button(preview_control_frame, text="Refresh", command=refresh_history).pack(side="right", padx=(5, 0), pady=(5,0))
-tk.Button(preview_control_frame, text="Clear", command=deselect_all).pack(side="right", padx=5, pady=(5,0))
-tk.Button(preview_control_frame, text="Select All", command=select_all).pack(side="right", padx=5, pady=(5,0))
-tk.Button(preview_control_frame, text="Select New", command=select_undownloaded).pack(side="right", padx=5, pady=(5,0))
+lbl_preview = tk.Label(preview_control_frame, text="Preview:")
+lbl_preview.pack(side="left", pady=(5,0))
+btn_refresh = tk.Button(preview_control_frame, text="Refresh", command=refresh_history)
+btn_refresh.pack(side="right", padx=(5, 0), pady=(5,0))
+btn_clear = tk.Button(preview_control_frame, text="Clear", command=deselect_all)
+btn_clear.pack(side="right", padx=5, pady=(5,0))
+btn_select_all = tk.Button(preview_control_frame, text="Select All", command=select_all)
+btn_select_all.pack(side="right", padx=5, pady=(5,0))
+btn_select_new = tk.Button(preview_control_frame, text="Select New", command=select_undownloaded)
+btn_select_new.pack(side="right", padx=5, pady=(5,0))
 
 columns = ("check", "url", "title", "duration", "last_download", "video_id", "content_type", "playlist_title", "channel_name", "subtitles", "playlist_index")
 preview_tree = ttk.Treeview(preview_frame, columns=columns, show="headings", height=15)
-preview_tree.heading("check", text="✓"); preview_tree.heading("url", text="URL"); preview_tree.heading("title", text="Title", command=lambda: sort_treeview("title")); preview_tree.heading("duration", text="Duration", command=lambda: sort_treeview("duration")); preview_tree.heading("last_download", text="Last DL", command=lambda: sort_treeview("last_download"))
-preview_tree.column("check", width=30, anchor="center", stretch=False); preview_tree.column("url", width=150, stretch=False); preview_tree.column("title", width=350); preview_tree.column("duration", width=70, anchor="center", stretch=False); preview_tree.column("last_download", width=120, anchor="center", stretch=False)
+preview_tree.heading("check", text="✓")
+preview_tree.heading("url", text="URL")
+preview_tree.heading("title", text="Title", command=lambda: sort_treeview("title"))
+preview_tree.heading("duration", text="Duration", command=lambda: sort_treeview("duration"))
+preview_tree.heading("last_download", text="Last DL", command=lambda: sort_treeview("last_download"))
+preview_tree.column("check", width=30, anchor="center", stretch=False)
+preview_tree.column("url", width=150, stretch=False)
+preview_tree.column("title", width=350)
+preview_tree.column("duration", width=70, anchor="center", stretch=False)
+preview_tree.column("last_download", width=120, anchor="center", stretch=False)
 for col in ["video_id", "content_type", "playlist_title", "channel_name", "subtitles", "playlist_index"]: preview_tree.column(col, width=0, stretch=tk.NO)
 preview_tree.pack(fill="both", expand=True, pady=5)
 preview_tree.bind("<Button-1>", toggle_check)
-preview_tree.bind("<KeyRelease-space>", toggle_check_with_space)
+preview_tree.bind("<KeyRelease-space>", lambda e: [preview_tree.set(i, "check", "☑" if preview_tree.set(i, "check") == "☐" else "☐") for i in preview_tree.selection()] and update_subtitle_controls())
 preview_tree.bind("<<TreeviewSelect>>", on_tree_selection_change)
 
+# Progress Frame
 progress_frame = tk.Frame(root)
 progress_frame.pack(fill="x", padx=10, pady=5)
 progress_var = tk.DoubleVar()
@@ -737,13 +699,26 @@ download_btn = tk.Button(progress_frame, text="Download", command=start_download
 download_btn.pack(side="left", padx=(5, 0))
 cancel_btn = tk.Button(progress_frame, text="Cancel", command=cancel_download, width=10, height=2, state="disabled")
 cancel_btn.pack(side="left", padx=(5, 0))
+
+# Log Frame
 log_frame = tk.Frame(root)
 log_frame.pack(fill="both", expand=True, padx=10, pady=5)
-tk.Label(log_frame, text="Log:").pack(anchor="w")
+
+log_top_frame = tk.Frame(log_frame)
+log_top_frame.pack(fill="x")
+lbl_log = tk.Label(log_top_frame, text="Log:")
+lbl_log.pack(side="left")
+
+# --- Bilingual Toggle Widget ---
+current_lang_var = tk.StringVar(value=config.get("language", "zh-TW"))
+lang_combo = ttk.Combobox(log_top_frame, textvariable=current_lang_var, values=["en", "zh-TW"], width=7, state="readonly")
+lang_combo.pack(side="right")
+lang_combo.bind("<<ComboboxSelected>>", update_ui_language)
+
 log_text = tk.Text(log_frame, height=8)
 log_text.pack(fill="both", expand=True, pady=5)
-log_text.config(state="normal")
 
 update_format_combobox_visibility()
+update_ui_language()
 
 root.mainloop()

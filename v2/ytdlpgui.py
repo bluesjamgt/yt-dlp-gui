@@ -58,7 +58,7 @@ I18N = {
         "col_url": "URL", "col_title": "Title", "col_duration": "Duration", "col_lastdl": "Last DL",
         "menu_file": "File", "action_open_dl": "📂 Open DL Folder", "action_exit": "❌ Exit",
         "menu_settings": "Settings", "action_save_cfg": "💾 Save Config",
-        "menu_lang": "Language", "action_tw": "繁體中文", "action_en": "English",
+        "menu_lang": "Language", "action_tw": "繁體中文", "action_en": "English", "action_ja": "日本語",
         "menu_tools": "Tools", "action_import_json": "📥 Import JSON History", 
         "action_fetch_meta": "🔄 Fetch Missing Meta", "action_scan_all": "🔎 Scan File Locations",
         "lbl_control_title": "⚙️ Video Control Tower", "lbl_history_title": "🗃️ Media History DB",
@@ -76,7 +76,19 @@ I18N = {
         "action_dl_organize": "📁 Download Organization...",
         "dlg_organize_title": "Download Organization Settings",
         "dlg_by_channel": "Organize by Channel Name",
-        "dlg_by_type": "Organize by Content Type (Videos / Shorts / Playlists)"
+        "dlg_by_type": "Organize by Content Type (Videos / Shorts / Playlists)",
+        "log_saved": "✅ Settings saved.",
+        "log_refresh": "History refreshed.",
+        "log_analyze_start": "Starting analysis...",
+        "log_analyze_fail": "Analysis failed: Invalid URL or network error.",
+        "log_analyze_no_video": "No videos found.",
+        "log_analyze_ok_count": "Analysis complete. Found {} items.",
+        "log_analyze_ok": "Analysis complete.",
+        "log_dl_processing": "⬇ ({0}/{1}) Processing: {2}",
+        "log_dl_saved": "Saved: {0}",
+        "log_dl_warning": "Warning '{0}': {1}",
+        "log_dl_done": "All tasks completed.",
+        "log_dl_cancelled": "Cancelled by user"
     },
     "zh-TW": {
         "url": "影片網址:", "analyze": "分析", "limit": "解析限制 (0=全部):",
@@ -89,7 +101,7 @@ I18N = {
         "col_url": "網址", "col_title": "影片標題", "col_duration": "影片時長", "col_lastdl": "最後下載時間",
         "menu_file": "檔案 (File)", "action_open_dl": "📂 開啟下載目錄", "action_exit": "❌ 結束",
         "menu_settings": "設定 (Settings)", "action_save_cfg": "💾 儲存當前設定",
-        "menu_lang": "語系 (Language)", "action_tw": "繁體中文 (zh-TW)", "action_en": "English (en)",
+        "menu_lang": "語系 (Language)", "action_tw": "繁體中文 (zh-TW)", "action_en": "English (en)", "action_ja": "日本語 (ja-JP)",
         "menu_tools": "工具 (Tools)", "action_import_json": "📥 匯入舊版 JSON 歷史", 
         "action_fetch_meta": "🛜 取得資訊", "action_scan_all": "🔎 掃描檔案位置",
         "lbl_control_title": "⚙️ 影片下載控制塔", "lbl_history_title": "🗃️ 影音歷史資料庫",
@@ -107,7 +119,62 @@ I18N = {
         "action_dl_organize": "⚙️ 下載設定 ..",
         "dlg_organize_title": "下載路徑分類設定",
         "dlg_by_channel": "依照頻道名稱分類",
-        "dlg_by_type": "依照內容類型分類 (Videos / Shorts / Playlists)"
+        "dlg_by_type": "依照內容類型分類 (Videos / Shorts / Playlists)",
+        "log_saved": "✅ 設定已儲存。",
+        "log_refresh": "紀錄已重整。",
+        "log_analyze_start": "開始分析...",
+        "log_analyze_fail": "分析失敗: 無效的網址或網路錯誤。",
+        "log_analyze_no_video": "找不到任何影片。",
+        "log_analyze_ok_count": "分析完成。共找到 {} 個項目。",
+        "log_analyze_ok": "分析完成。",
+        "log_dl_processing": "⬇ ({0}/{1}) 處理中: {2}",
+        "log_dl_saved": "儲存成功: {0}",
+        "log_dl_warning": "處理警告 '{0}': {1}",
+        "log_dl_done": "所有任務執行完畢。",
+        "log_dl_cancelled": "手動取消下載"
+    },
+    "ja": {
+        "url": "URL:", "analyze": "分析", "limit": "制限 (0=全て):",
+        "type": "形式:", "res": "解像度:", "audio": "音声:", "path": "保存先:",
+        "browse": "参照...", "open": "開く", "embed_thumb": "サムネイル追加",
+        "add_track": "トラック番号追加", "dl_subtitles": "字幕をダウンロード", 
+        "preview": "プレビュー:", "refresh": "更新", "clear": "クリア", 
+        "select_all": "全て選択", "select_new": "未ダウンロード選択", 
+        "download": "ダウンロード", "cancel": "キャンセル", "log": "ログ:",
+        "col_url": "URL", "col_title": "タイトル", "col_duration": "長さ", "col_lastdl": "最終DL日時",
+        "menu_file": "ファイル (File)", "action_open_dl": "📂 DLフォルダを開く", "action_exit": "❌ 終了",
+        "menu_settings": "設定 (Settings)", "action_save_cfg": "💾 設定を保存",
+        "menu_lang": "言語 (Language)", "action_tw": "繁體中文 (zh-TW)", "action_en": "English (en)", "action_ja": "日本語 (ja)",
+        "menu_tools": "ツール (Tools)", "action_import_json": "📥 JSON履歴をインポート", 
+        "action_fetch_meta": "🔄 情報を取得", "action_scan_all": "🔎 ファイルの場所をスキャン",
+        "lbl_control_title": "⚙️ ダウンロード コントロールタワー", "lbl_history_title": "🗃️ 履歴データベース",
+        "ctx_folder": "📂 フォルダに表示", "ctx_copy": "🔗 リンクアドレスをコピー", "ctx_browser": "🌐 ブラウザで開く",
+        "ctx_fetch": "🔍 情報を取得", "ctx_scan_silent": "🔍 不足ファイルを検索",
+        "ctx_scan_custom": "📂 ファイルの場所を選択...", "ctx_remove": "❌ リストから削除",
+        "ctx_delete": "🗑️ ファイルを削除", "ctx_clear": "🧹 リストを全てクリア", 
+        "ctx_dl": "⬇ ダウンロード先..",
+        "ctx_dl_channel": "📺 チャンネルを一括ダウンロード",
+        "ctx_dl_video": "🎬 動画をダウンロード (Video)",
+        "ctx_dl_audio": "🎵 音声をダウンロード (Audio)",
+        "ctx_dl_cover": "🖼️ サムネイルをダウンロード (Cover)",
+        "tb_video": "🎬 動画", "tb_audio": "🎵 音声", "tb_cover": "🖼️ サムネイル",
+        "tb_remove": "❌ 削除", "tb_clear_dead": "🧹 無効な履歴をクリア", "ph_search": "🔍 タイトル、チャンネル、URLを検索...",
+        "action_dl_organize": "📁 ダウンロード整理設定...",
+        "dlg_organize_title": "ダウンロード整理設定",
+        "dlg_by_channel": "チャンネル名で整理する",
+        "dlg_by_type": "コンテンツタイプで整理する (Videos / Shorts / Playlists)",
+        "log_saved": "✅ 設定を保存しました。",
+        "log_refresh": "履歴を更新しました。",
+        "log_analyze_start": "分析を開始...",
+        "log_analyze_fail": "分析失敗: 無効なURLまたはネットワークエラー。",
+        "log_analyze_no_video": "動画が見つかりません。",
+        "log_analyze_ok_count": "分析完了。{} 個のアイテムを見つけました。",
+        "log_analyze_ok": "分析完了。",
+        "log_dl_processing": "⬇ ({0}/{1}) 処理中: {2}",
+        "log_dl_saved": "保存に成功: {0}",
+        "log_dl_warning": "処理警告 '{0}': {1}",
+        "log_dl_done": "すべてのタスクが完了しました。",
+        "log_dl_cancelled": "手動でキャンセルしました"
     }
 }
 
@@ -369,34 +436,35 @@ class ParseWorker(QThread):
     item_signal = pyqtSignal(int, dict, str, str, str)
     finished_signal = pyqtSignal()
     
-    def __init__(self, url, limit):
+    def __init__(self, url, limit, i18n_dict=None):
         super().__init__()
         self.url, self.limit = url, limit
+        self.i18n = i18n_dict or I18N["zh-TW"]
 
     def run(self):
         try:
-            self.log_signal.emit("開始分析...")
+            self.log_signal.emit(self.i18n.get("log_analyze_start", "開始分析..."))
             ydl_opts = {"quiet": True, "ignoreerrors": True, "extractor_args": {'youtube': ['player_client=default']}}
             if self.limit > 0: ydl_opts["playlistend"] = self.limit
             if "youtube.com/@" in self.url and any(x in self.url for x in ["/videos", "/shorts", "/streams"]):
                 ydl_opts["extract_flat"] = True
 
             with YoutubeDL(ydl_opts) as ydl: info = ydl.extract_info(self.url, download=False)
-            if not info: return self.log_signal.emit("分析失敗: 無效的網址或網路錯誤。")
+            if not info: return self.log_signal.emit(self.i18n.get("log_analyze_fail", "分析失敗: 無效的網址或網路錯誤。"))
 
             if "entries" in info:
                 entries = [e for e in info.get("entries", []) if e]
-                if not entries: return self.log_signal.emit("找不到任何影片。")
+                if not entries: return self.log_signal.emit(self.i18n.get("log_analyze_no_video", "找不到任何影片。"))
                 playlist_title = sanitize_filename(info.get("title", "Unknown Playlist"))
                 channel_name = sanitize_filename(info.get("uploader", "Unknown Channel"))
                 for idx, entry in enumerate(entries, start=1):
                     entry['playlist_index'] = entry.get('playlist_index') or idx
                     self.item_signal.emit(idx, entry, "playlist_video", playlist_title, channel_name)
-                self.log_signal.emit(f"分析完成。共找到 {len(entries)} 個項目。")
+                self.log_signal.emit(self.i18n.get("log_analyze_ok_count", "分析完成。共找到 {} 個項目。").replace("{}", str(len(entries))))
             else:
                 channel_name = sanitize_filename(info.get("uploader", "Unknown Channel"))
                 self.item_signal.emit(1, info, "video", "", channel_name)
-                self.log_signal.emit("分析完成。")
+                self.log_signal.emit(self.i18n.get("log_analyze_ok", "分析完成。"))
         except Exception as e: self.log_signal.emit(f"錯誤: {e}")
         finally: self.finished_signal.emit()
 
@@ -405,12 +473,13 @@ class DownloadWorker(QThread):
     progress_signal = pyqtSignal(int)
     finished_signal = pyqtSignal()
 
-    def __init__(self, settings, items, exact_path=False):
+    def __init__(self, settings, items, exact_path=False, i18n_dict=None):
         super().__init__()
         self.settings = settings
         self.items = items
         self.exact_path = exact_path
         self._is_cancelled = False
+        self.i18n = i18n_dict or I18N["zh-TW"]
 
     def cancel(self): self._is_cancelled = True
 
@@ -459,7 +528,7 @@ class DownloadWorker(QThread):
             base_outtmpl = os.path.join(final_dl_path, sanitize_filename(final_title))
             sandbox_outtmpl = f"{base_outtmpl}_ytdlptmp"
 
-            self.log_signal.emit(f"⬇ ({idx}/{total}) 處理中: {final_title}")
+            self.log_signal.emit(self.i18n.get("log_dl_processing", "⬇ ({0}/{1}) 處理中: {2}").format(idx, total, final_title))
 
             ydl_opts = dict(ydl_opts_base)
             ydl_opts.update({
@@ -496,6 +565,8 @@ class DownloadWorker(QThread):
             if pps: ydl_opts["postprocessors"] = pps
 
             def hook(d):
+                if self._is_cancelled:
+                    raise Exception(self.i18n.get("log_dl_cancelled", "手動取消下載 / Cancelled by user"))
                 if d["status"] == "downloading":
                     try:
                         # 💡 強制清洗 YT 傳回的雜訊字元，確保轉型為 int 不會崩潰
@@ -552,7 +623,7 @@ class DownloadWorker(QThread):
                     final_file = tmp_file.replace(sandbox_outtmpl, base_outtmpl)
                     if os.path.exists(final_file): os.remove(final_file)
                     os.rename(tmp_file, final_file)
-                self.log_signal.emit(f"儲存成功: {final_title}")
+                self.log_signal.emit(self.i18n.get("log_dl_saved", "儲存成功: {0}").format(final_title))
                 
                 conn = sqlite3.connect(DB_PATH)
                 filesize = "Unknown"
@@ -615,12 +686,12 @@ class DownloadWorker(QThread):
                 conn.commit(); conn.close()
                 
             except Exception as e:
-                self.log_signal.emit(f"處理警告 '{final_title}': {e}")
+                self.log_signal.emit(self.i18n.get("log_dl_warning", "處理警告 '{0}': {1}").format(final_title, e))
                 for tmp_file in glob.glob(f"{sandbox_outtmpl}*"):
                     try: os.remove(tmp_file)
                     except: pass
 
-        self.log_signal.emit("所有任務執行完畢。")
+        self.log_signal.emit(self.i18n.get("log_dl_done", "所有任務執行完畢。"))
         self.finished_signal.emit()
 
 # ==========================================
@@ -680,7 +751,8 @@ class MainWindow(QMainWindow):
             
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 json.dump(cfg, f, indent=4, ensure_ascii=False)
-            self.log_msg("✅ 設定已儲存。")
+            lang_dict = I18N.get(self.current_lang, I18N["zh-TW"])
+            self.log_msg(lang_dict.get("log_saved", "✅ 設定已儲存。"))
         except Exception as e: self.log_msg(f"儲存設定檔失敗: {e}")
 
     def _show_organize_dialog(self):
@@ -764,9 +836,11 @@ class MainWindow(QMainWindow):
         self.lang_menu = menubar.addMenu("語系")
         self.action_tw = QAction("繁體中文", self)
         self.action_en = QAction("English", self)
+        self.action_ja = QAction("日本語", self)
         self.action_tw.triggered.connect(lambda: self._change_lang("zh-TW"))
         self.action_en.triggered.connect(lambda: self._change_lang("en"))
-        self.lang_menu.addAction(self.action_tw); self.lang_menu.addAction(self.action_en)
+        self.action_ja.triggered.connect(lambda: self._change_lang("ja"))
+        self.lang_menu.addAction(self.action_tw); self.lang_menu.addAction(self.action_en); self.lang_menu.addAction(self.action_ja)
 
         self.tools_menu = menubar.addMenu("工具")
         self.import_json_action = QAction("📥 匯入舊版 JSON 歷史", self)
@@ -1086,6 +1160,14 @@ class MainWindow(QMainWindow):
         preview_header.addWidget(self.btn_sel_all); preview_header.addWidget(self.btn_sel_new)
         left_layout.addLayout(preview_header)
 
+        # Create a splitter to contain the preview tree and the log area
+        self.left_inner_splitter = QSplitter(Qt.Orientation.Vertical)
+        
+        # Upper container: Preview Tree
+        tree_container = QWidget()
+        tree_layout = QVBoxLayout(tree_container)
+        tree_layout.setContentsMargins(0, 0, 0, 0)
+        
         self.preview_tree = QTreeWidget()
         self.preview_tree.setRootIsDecorated(False)
         self.preview_tree.setIndentation(0)
@@ -1095,10 +1177,16 @@ class MainWindow(QMainWindow):
         self.preview_tree.setColumnWidth(0, 24); self.preview_tree.setColumnWidth(1, 230)
         self.preview_tree.setColumnWidth(2, 60); self.preview_tree.setColumnWidth(3, 140)
         self.preview_tree.itemChanged.connect(self.on_item_changed)
-        left_layout.addWidget(self.preview_tree, stretch=1)
-
+        tree_layout.addWidget(self.preview_tree)
+        self.left_inner_splitter.addWidget(tree_container)
+        
+        # Lower container: Progress, Buttons, and Log
+        log_container = QWidget()
+        log_layout = QVBoxLayout(log_container)
+        log_layout.setContentsMargins(0, 10, 0, 0)
+        
         self.progress_bar = QProgressBar(); self.progress_bar.setValue(0)
-        left_layout.addWidget(self.progress_bar)
+        log_layout.addWidget(self.progress_bar)
 
         bl = QHBoxLayout()
         self.btn_download = QPushButton("⬇ 開始下載")
@@ -1109,12 +1197,17 @@ class MainWindow(QMainWindow):
         self.btn_cancel.setEnabled(False)
         self.btn_cancel.clicked.connect(self.cancel_download)
         bl.addWidget(self.btn_download, stretch=2); bl.addWidget(self.btn_cancel, stretch=1)
-        left_layout.addLayout(bl)
+        log_layout.addLayout(bl)
 
         self.lbl_log = QLabel("執行紀錄:")
-        left_layout.addWidget(self.lbl_log)
-        self.log_text = QTextEdit(); self.log_text.setMaximumHeight(90); self.log_text.setReadOnly(True)
-        left_layout.addWidget(self.log_text)
+        log_layout.addWidget(self.lbl_log)
+        self.log_text = QTextEdit(); self.log_text.setReadOnly(True)
+        log_layout.addWidget(self.log_text)
+        
+        self.left_inner_splitter.addWidget(log_container)
+        self.left_inner_splitter.setSizes([450, 250]) # Default size ratio
+        
+        left_layout.addWidget(self.left_inner_splitter, stretch=1)
 
         # ==========================================
         # 右側歷史長廊
@@ -1263,6 +1356,7 @@ class MainWindow(QMainWindow):
             self.lang_menu.setTitle(lang.get("menu_lang", ""))
             self.action_tw.setText(lang.get("action_tw", ""))
             self.action_en.setText(lang.get("action_en", ""))
+            self.action_ja.setText(lang.get("action_ja", ""))
             self.tools_menu.setTitle(lang.get("menu_tools", ""))
             self.import_json_action.setText(lang.get("action_import_json", ""))
             self.fetch_meta_action.setText(lang.get("action_fetch_meta", ""))
@@ -1353,7 +1447,8 @@ class MainWindow(QMainWindow):
             row = cursor.fetchone()
             if row: item.setText(3, row[0])
         conn.close()
-        self.log_msg("紀錄已重整。")
+        lang_dict = I18N.get(self.current_lang, I18N["zh-TW"])
+        self.log_msg(lang_dict.get("log_refresh", "紀錄已重整。"))
 
     def start_parse(self):
         url = self.url_input.currentText().strip()
@@ -1368,7 +1463,7 @@ class MainWindow(QMainWindow):
             
         self.preview_tree.clear()
         self.btn_analyze.setEnabled(False)
-        self.parse_worker = ParseWorker(url, self.limit_spin.value())
+        self.parse_worker = ParseWorker(url, self.limit_spin.value(), I18N.get(self.current_lang, I18N["zh-TW"]))
         self.parse_worker.log_signal.connect(self.log_msg)
         self.parse_worker.item_signal.connect(self.add_tree_item)
         self.parse_worker.finished_signal.connect(lambda: [self.btn_analyze.setEnabled(True), self.refresh_history_in_tree(), self.update_subtitle_controls()])
@@ -1423,7 +1518,7 @@ class MainWindow(QMainWindow):
         self.btn_download.setEnabled(False); self.btn_cancel.setEnabled(True)
         self.progress_bar.setValue(0)
         
-        self.dl_worker = DownloadWorker(settings, items)
+        self.dl_worker = DownloadWorker(settings, items, i18n_dict=I18N.get(self.current_lang, I18N["zh-TW"]))
         self.dl_worker.log_signal.connect(self.log_msg)
         self.dl_worker.progress_signal.connect(self.progress_bar.setValue)
         self.dl_worker.finished_signal.connect(self._dl_finished)
@@ -1463,7 +1558,7 @@ class MainWindow(QMainWindow):
         
         self.btn_download.setEnabled(False); self.btn_cancel.setEnabled(True)
         self.progress_bar.setValue(0)
-        self.dl_worker = DownloadWorker(settings, items, exact_path=True)
+        self.dl_worker = DownloadWorker(settings, items, exact_path=True, i18n_dict=I18N.get(self.current_lang, I18N["zh-TW"]))
         self.dl_worker.log_signal.connect(self.log_msg)
         self.dl_worker.progress_signal.connect(self.progress_bar.setValue)
         self.dl_worker.finished_signal.connect(self._dl_finished)

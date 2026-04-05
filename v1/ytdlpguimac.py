@@ -405,7 +405,8 @@ def download():
     ffmpeg_exe_path = os.path.join(base_path, ffmpeg_exe)
 
     ydl_opts = {}
-    if os.path.exists(ffmpeg_exe_path): ydl_opts['ffmpeg_location'] = ffmpeg_exe_path
+    # 💡 修正 1：給予 base_path 資料夾路徑，讓 yt-dlp 同時抓到 ffmpeg 與 ffprobe
+    if os.path.exists(ffmpeg_exe_path): ydl_opts['ffmpeg_location'] = base_path
 
     checked_items = [i for i in preview_tree.get_children() if preview_tree.set(i, "check") == "☑"]
     if not checked_items: return log_message(I18N.get(current_lang_var.get(), I18N["en"])["msg_select"])
@@ -440,19 +441,8 @@ def download():
         })
         
         pps = []
-        if embed_thumbnail_var.get():
-            ydl_opts["writethumbnail"] = True
-            pps.append({'key': 'FFmpegThumbnailsConvertor', 'format': 'jpg'})
-            pps.append({'key': 'EmbedThumbnail'})
-            pps.append({'key': 'FFmpegMetadata'})
 
-        should_download_sub = (download_type == "subtitle") or (download_subtitles_var.get())
-        if should_download_sub:
-            selected_lang = subtitle_lang_combo.get()
-            ydl_opts.update({"writesubtitles": True, "writeautomaticsub": False, "subtitlesformat": "srt"})
-            pps.append({'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'})
-            ydl_opts['subtitleslangs'] = [selected_lang] if selected_lang and selected_lang != "all" else ['all', '-live_chat']
-
+        # 💡 修正 2：優先確立「核心轉檔」邏輯 (先抽出音訊)
         if download_type == "video":
             height_limit = video_limit_combo.get().replace("p", "")
             ydl_opts.update({"format": f"bestvideo[height<={height_limit}]+bestaudio/best", "merge_output_format": target_ext})
@@ -466,6 +456,21 @@ def download():
             pps.append({'key': 'FFmpegThumbnailsConvertor', 'format': target_ext})
         elif download_type == "subtitle":
             ydl_opts.update({"skip_download": True})
+
+        # 字幕處理
+        should_download_sub = (download_type == "subtitle") or (download_subtitles_var.get())
+        if should_download_sub:
+            selected_lang = subtitle_lang_combo.get()
+            ydl_opts.update({"writesubtitles": True, "writeautomaticsub": False, "subtitlesformat": "srt"})
+            pps.append({'key': 'FFmpegSubtitlesConvertor', 'format': 'srt'})
+            ydl_opts['subtitleslangs'] = [selected_lang] if selected_lang and selected_lang != "all" else ['all', '-live_chat']
+
+        # 💡 修正 3：最後才寫入封面與詮釋資料 (必須排在轉檔之後)
+        if embed_thumbnail_var.get() and download_type not in ["cover", "subtitle"]:
+            ydl_opts["writethumbnail"] = True
+            pps.append({'key': 'FFmpegThumbnailsConvertor', 'format': 'jpg'})
+            pps.append({'key': 'FFmpegMetadata'})
+            pps.append({'key': 'EmbedThumbnail'})
 
         if pps: ydl_opts["postprocessors"] = pps
 

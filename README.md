@@ -1,6 +1,6 @@
 # 🚀 yt-dlp Downloader GUI v2.0 (Beta)
 
-![Preview](https://raw.githubusercontent.com/bluesjamgt/yt-dlp-gui/main/preview.jpg)
+![Preview](preview.jpg)
 
 A modernized, database-driven graphical interface for [yt-dlp](https://github.com/yt-dlp/yt-dlp). Rebuilt from the ground up with **PyQt6** for a superior, high-performance media extraction experience.
 

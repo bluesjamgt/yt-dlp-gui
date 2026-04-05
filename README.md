@@ -24,7 +24,7 @@ The second generation marks a significant shift from Tkinter to **PyQt6**, intro
 ## ◼ Installation
 
 1.  Visit the **[Releases](https://github.com/bluesjamgt/yt-dlp-gui/releases/latest)** page.
-2.  Download the `ytdlpgui_v2_beta.exe`.
+2.  Download the `yt-dlpGUI.exe`.
 3.  Launch the app. 
     * *Note: Local database (`history.db`) and config will be stored in the `ytdlp_data/` directory.*
 
@@ -37,6 +37,6 @@ The second generation marks a significant shift from Tkinter to **PyQt6**, intro
 
 ## ◼ Credits & License
 
-* **Lead Development**: Bluz J & AI Assistant (Nai)
+* **Lead Development**: Bluz J & AI Assistant
 * **Core Logic**: Powered by [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 * **License**: Intended for personal archiving and technical research. Users are responsible for adhering to platform Terms of Service.

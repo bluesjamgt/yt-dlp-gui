@@ -490,9 +490,20 @@ class DownloadWorker(QThread):
         elif dl_type == "Cover": target_ext = "webp"
 
         ffmpeg_exe = "ffmpeg.exe" if platform.system() == "Windows" else "ffmpeg"
-        ffmpeg_exe_path = os.path.join(BASE_DIR, ffmpeg_exe)
-        ydl_opts_base = {'ffmpeg_location': BASE_DIR} if os.path.exists(ffmpeg_exe_path) else {}
         
+        # 判斷是否為 PyInstaller 打包環境
+        if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+            BIN_DIR = sys._MEIPASS  # 打包後的暫存二進位檔目錄
+        else:
+            BIN_DIR = BASE_DIR      # 開發環境目錄
+            
+        ffmpeg_exe_path = os.path.join(BIN_DIR, ffmpeg_exe)
+        
+        # 將 yt-dlp 的 ffmpeg_location 指向正確的 BIN_DIR
+        ydl_opts_base = {'ffmpeg_location': BIN_DIR} if os.path.exists(ffmpeg_exe_path) else {}
+        
+        if not ydl_opts_base:
+            self.log_signal.emit(f"⚠️ 警告: 找不到打包的 ffmpeg，路徑 {ffmpeg_exe_path} 不存在。")
         total = len(self.items)
 
         for idx, item in enumerate(self.items, start=1):

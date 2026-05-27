@@ -502,7 +502,7 @@ class DownloadWorker(QThread):
         # 將 yt-dlp 的 ffmpeg_location 指向正確的 BIN_DIR
         ydl_opts_base = {'ffmpeg_location': BIN_DIR} if os.path.exists(ffmpeg_exe_path) else {}
         
-        if not ydl_opts_base:
+        if not ydl_opts_base and getattr(sys, 'frozen', False):
             self.log_signal.emit(f"⚠️ 警告: 找不到打包的 ffmpeg，路徑 {ffmpeg_exe_path} 不存在。")
         total = len(self.items)
 
@@ -630,10 +630,14 @@ class DownloadWorker(QThread):
                                     thumb_path = tp
                     except: pass
                 
-                for tmp_file in glob.glob(f"{sandbox_outtmpl}*"):
+                final_file = ""
+                for tmp_file in glob.glob(f"{glob.escape(sandbox_outtmpl)}*"):
                     final_file = tmp_file.replace(sandbox_outtmpl, base_outtmpl)
                     if os.path.exists(final_file): os.remove(final_file)
                     os.rename(tmp_file, final_file)
+                
+                if not final_file:
+                    final_file = f"{base_outtmpl}.{target_ext}"
                 self.log_signal.emit(self.i18n.get("log_dl_saved", "儲存成功: {0}").format(final_title))
                 
                 conn = sqlite3.connect(DB_PATH)
@@ -1188,6 +1192,7 @@ class MainWindow(QMainWindow):
         self.preview_tree.setColumnWidth(0, 24); self.preview_tree.setColumnWidth(1, 230)
         self.preview_tree.setColumnWidth(2, 60); self.preview_tree.setColumnWidth(3, 140)
         self.preview_tree.itemChanged.connect(self.on_item_changed)
+        self.preview_tree.itemDoubleClicked.connect(self._on_preview_double_clicked)
         tree_layout.addWidget(self.preview_tree)
         self.left_inner_splitter.addWidget(tree_container)
         
@@ -1418,8 +1423,22 @@ class MainWindow(QMainWindow):
             widget = self.preview_tree.itemWidget(item, 0)
             if widget and widget.layout().itemAt(0).widget(): widget.layout().itemAt(0).widget().setChecked(item.text(3) == "Not Downloaded")
 
+    def _on_preview_double_clicked(self, item, column):
+        if column == 1:
+            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
+            self.preview_tree.editItem(item, column)
+
     def on_item_changed(self, item, column):
-        if column == 0: self.update_subtitle_controls()
+        if column == 0: 
+            self.update_subtitle_controls()
+        elif column == 1:
+            new_title = item.text(1)
+            old_data = item.data(0, Qt.ItemDataRole.UserRole)
+            if old_data:
+                new_data = list(old_data)
+                new_data[1] = new_title
+                item.setData(0, Qt.ItemDataRole.UserRole, tuple(new_data))
+            item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
 
     def update_subtitle_controls(self):
         all_langs = set()

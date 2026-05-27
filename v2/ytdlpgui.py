@@ -37,7 +37,7 @@ if platform.system() == "Darwin":
     except ImportError: pass
     ssl._create_default_https_context = ssl._create_unverified_context
 
-APP_VERSION = "2.0.1"
+APP_VERSION = "2.1.0"
 if getattr(sys, 'frozen', False):
     BASE_DIR = os.path.dirname(sys.executable)
 else:

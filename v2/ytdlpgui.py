@@ -1,4 +1,4 @@
-# yt-dlp Downloader GUI v2.328 (Phase 3 - Native Checkbox, MenuBar I18N, Fixed Download)
+# yt-dlp Downloader GUI v2.1.0 (Auto-Updater added, Native Checkbox, MenuBar I18N, Fixed Download)
 import os
 import sys
 import json
@@ -28,6 +28,16 @@ except ImportError:
 # ==========================================
 # 📂 系統路徑與全域變數
 # ==========================================
+# --- 🍎 Mac 專用：強制修復 SSL 憑證信任鏈 ---
+if platform.system() == "Darwin":
+    import ssl
+    try:
+        import certifi
+        os.environ['SSL_CERT_FILE'] = certifi.where()
+    except ImportError: pass
+    ssl._create_default_https_context = ssl._create_unverified_context
+
+APP_VERSION = "2.1.0"
 if getattr(sys, 'frozen', False):
     BASE_DIR = os.path.dirname(sys.executable)
 else:
@@ -178,8 +188,190 @@ I18N = {
     }
 }
 
+
+def open_file_or_dir(path):
+    import platform, subprocess, os
+    if not os.path.exists(path): return
+    if platform.system() == "Windows":
+        os.startfile(path)
+    elif platform.system() == "Darwin":
+        subprocess.run(["open", path])
+    else:
+        subprocess.run(["xdg-open", path])
+
 def sanitize_filename(filename): 
     return re.sub(r'[\\/:*?"<>|]', '_', filename).strip().rstrip('.')
+
+class UpdateWorker(QThread):
+    progress_signal = pyqtSignal(int, int) 
+    log_signal = pyqtSignal(str)
+    check_finished_signal = pyqtSignal(bool, str, str, str) 
+    download_finished_signal = pyqtSignal(bool, str) 
+
+    def __init__(self, mode, url="", filepath=""):
+        super().__init__()
+        self.mode = mode 
+        self.url = url
+        self.filepath = filepath
+
+    def _parse_version(self, v_str):
+        m = re.search(r'(\d+(?:\.\d+)*)(.*)', v_str)
+        if not m: return ([0], "")
+        return ([int(x) for x in m.group(1).split('.')], m.group(2).lower().replace('v', '').strip())
+
+    def _compare_versions(self, v1, v2):
+        n1, s1 = self._parse_version(v1)
+        n2, s2 = self._parse_version(v2)
+        length = max(len(n1), len(n2))
+        n1.extend([0] * (length - len(n1)))
+        n2.extend([0] * (length - len(n2)))
+        if n1 != n2: return 1 if n1 > n2 else -1
+        if not s1 and s2: return 1
+        if s1 and not s2: return -1
+        if s1 > s2: return 1
+        if s1 < s2: return -1
+        return 0
+
+    def run(self):
+        if self.mode == 'check': self._do_check()
+        elif self.mode == 'download': self._do_download()
+
+    def _do_check(self):
+        try:
+            self.log_signal.emit("🔄 正在檢查更新...")
+            import urllib.request
+            req = urllib.request.Request('https://api.github.com/repos/bluesjamgt/yt-dlp-gui/releases')
+            req.add_header('User-Agent', 'yt-dlp-gui-updater')
+            r = urllib.request.urlopen(req, timeout=10)
+            data = json.loads(r.read())
+            
+            latest_ver = APP_VERSION
+            latest_url, latest_filename = "", ""
+            is_win = platform.system() == "Windows"
+            
+            for d in data:
+                tag = d.get('tag_name', '')
+                if is_win and 'mac' in tag.lower(): continue
+                for a in d.get('assets', []):
+                    name = a.get('name', '').lower()
+                    if (is_win and name.endswith('.exe')) or (not is_win and name.endswith('.dmg')):
+                        if self._compare_versions(tag, latest_ver) > 0:
+                            latest_ver = tag
+                            latest_url = a.get('browser_download_url')
+                            latest_filename = a.get('name')
+                        break
+            if latest_url and latest_ver != APP_VERSION:
+                self.check_finished_signal.emit(True, latest_ver, latest_url, latest_filename)
+            else:
+                self.log_signal.emit("✅ 目前已是最新版本。")
+                self.check_finished_signal.emit(False, "", "", "")
+        except Exception as e:
+            self.log_signal.emit(f"⚠️ 檢查更新失敗: {e}")
+            self.check_finished_signal.emit(False, "", "", "")
+
+    def _do_download(self):
+        import urllib.request
+        try:
+            tmp_path = self.filepath + ".part"
+            resume_header = {}
+            downloaded_size = 0
+            if os.path.exists(tmp_path):
+                downloaded_size = os.path.getsize(tmp_path)
+                resume_header = {'Range': f'bytes={downloaded_size}-'}
+                
+            req = urllib.request.Request(self.url, headers=resume_header)
+            req.add_header('User-Agent', 'yt-dlp-gui-updater')
+            try:
+                r = urllib.request.urlopen(req, timeout=10)
+            except urllib.error.HTTPError as e:
+                if e.code == 416: 
+                    os.rename(tmp_path, self.filepath)
+                    self.download_finished_signal.emit(True, self.filepath)
+                    return
+                else: raise e
+                    
+            total_size = int(r.headers.get('Content-Length', 0)) + downloaded_size
+            mode = 'ab' if downloaded_size > 0 and r.status == 206 else 'wb'
+            if mode == 'wb': downloaded_size = 0
+            
+            with open(tmp_path, mode) as f:
+                while True:
+                    chunk = r.read(8192)
+                    if not chunk: break
+                    f.write(chunk)
+                    downloaded_size += len(chunk)
+                    self.progress_signal.emit(downloaded_size, total_size)
+                    
+            if os.path.exists(self.filepath): os.remove(self.filepath)
+            os.rename(tmp_path, self.filepath)
+            self.download_finished_signal.emit(True, self.filepath)
+        except Exception as e:
+            self.log_signal.emit(f"⚠️ 下載更新失敗: {e}")
+            self.download_finished_signal.emit(False, "")
+
+from PyQt6.QtWidgets import QMessageBox
+
+class UpdateDialog(QDialog):
+    def __init__(self, version, url, filename, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("📥 軟體更新")
+        self.setFixedSize(350, 150)
+        self.url, self.filename = url, filename
+        
+        layout = QVBoxLayout(self)
+        self.lbl = QLabel(f"發現新版本 {version}，是否立即下載更新？")
+        layout.addWidget(self.lbl)
+        
+        self.pbar = QProgressBar()
+        self.pbar.setValue(0)
+        self.pbar.setVisible(False)
+        layout.addWidget(self.pbar)
+        
+        self.btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Yes | QDialogButtonBox.StandardButton.No)
+        self.btn_box.accepted.connect(self.start_download)
+        self.btn_box.rejected.connect(self.reject)
+        layout.addWidget(self.btn_box)
+        
+    def start_download(self):
+        self.btn_box.button(QDialogButtonBox.StandardButton.Yes).setEnabled(False)
+        self.btn_box.button(QDialogButtonBox.StandardButton.No).setEnabled(False)
+        self.lbl.setText(f"正在下載 {self.filename}...")
+        self.pbar.setVisible(True)
+        
+        tmp_dir = os.path.join(DATA_DIR, "tmp")
+        os.makedirs(tmp_dir, exist_ok=True)
+        save_path = os.path.join(tmp_dir, self.filename)
+        
+        self.worker = UpdateWorker(mode='download', url=self.url, filepath=save_path)
+        self.worker.progress_signal.connect(self.update_progress)
+        self.worker.download_finished_signal.connect(self.download_finished)
+        self.worker.start()
+        
+    def update_progress(self, dl_size, total):
+        if total > 0:
+            self.pbar.setMaximum(total)
+            self.pbar.setValue(dl_size)
+            
+    def download_finished(self, success, filepath):
+        if success:
+            self.accept()
+            if platform.system() == "Windows":
+                bat_path = os.path.join(BASE_DIR, "update.bat")
+                exe_name = os.path.basename(sys.executable)
+                if getattr(sys, 'frozen', False):
+                    with open(bat_path, "w", encoding="utf-8") as f:
+                        f.write(f'''@echo off\necho 正在更新 yt-dlp GUI... 請稍候...\ntimeout /T 2 /NOBREAK > nul\ndel "{exe_name}"\ncopy /Y "{filepath}" "{exe_name}"\nstart "" "{exe_name}"\ndel "%~f0"\n''')
+                    import subprocess
+                    subprocess.Popen([bat_path], shell=True, cwd=BASE_DIR)
+                    QApplication.quit()
+                else:
+                    QMessageBox.information(self, "更新完成", f"已下載至 {filepath}\\n(因以腳本運行，請手動替換執行檔)")
+            else:
+                QMessageBox.information(self, "更新完成", f"已下載至 {filepath}\\n請手動替換您的應用程式。")
+        else:
+            self.lbl.setText("下載失敗！請查看紀錄。")
+            self.btn_box.button(QDialogButtonBox.StandardButton.No).setEnabled(True)
+            self.btn_box.button(QDialogButtonBox.StandardButton.No).setText("關閉")
 
 class ThumbnailWorker(QThread):
     finished_signal = pyqtSignal(str, str)
@@ -425,8 +617,7 @@ class HistoryCardWidget(QFrame):
             if not folder or not os.path.exists(folder):
                 folder = bp if os.path.exists(bp) else ''
         if folder and os.path.exists(folder):
-            if platform.system() == "Windows": os.startfile(folder)
-            elif platform.system() == "Darwin": os.system(f"open '{folder}'")
+            open_file_or_dir(folder)
 
 # ==========================================
 # ⚙️ 背景執行緒：解析與下載
@@ -715,7 +906,7 @@ class DownloadWorker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("yt-dlp Downloader v2.0 (Phase 3)")
+        self.setWindowTitle(f"yt-dlp Downloader v{APP_VERSION}")
         self.resize(1200, 800)
         
         self.loaded_config = self._load_old_config()
@@ -858,6 +1049,12 @@ class MainWindow(QMainWindow):
         self.lang_menu.addAction(self.action_tw); self.lang_menu.addAction(self.action_en); self.lang_menu.addAction(self.action_ja)
 
         self.tools_menu = menubar.addMenu("工具")
+        
+        self.check_update_action = QAction("🔄 檢查更新", self)
+        self.check_update_action.triggered.connect(self.check_update)
+        self.tools_menu.addAction(self.check_update_action)
+        self.tools_menu.addSeparator()
+        
         self.import_json_action = QAction("📥 匯入舊版 JSON 歷史", self)
         self.import_json_action.triggered.connect(self.import_old_json)
         self.fetch_meta_action = QAction("🔄 連線擷取檔案資訊", self)
@@ -866,6 +1063,17 @@ class MainWindow(QMainWindow):
         self.scan_all_action.triggered.connect(lambda: self.run_local_scan(None, False))
         self.tools_menu.addAction(self.import_json_action); self.tools_menu.addAction(self.fetch_meta_action)
         self.tools_menu.addAction(self.scan_all_action)
+
+    def check_update(self):
+        self.check_update_worker = UpdateWorker(mode='check')
+        self.check_update_worker.log_signal.connect(self.log_msg)
+        self.check_update_worker.check_finished_signal.connect(self._on_update_check_done)
+        self.check_update_worker.start()
+        
+    def _on_update_check_done(self, has_update, version, url, filename):
+        if has_update:
+            self.update_dlg = UpdateDialog(version, url, filename, self)
+            self.update_dlg.exec()
 
     def import_old_json(self):
         path, _ = QFileDialog.getOpenFileName(self, "匯入舊版 JSON 歷史", BASE_DIR, "JSON Files (*.json)")
@@ -1063,8 +1271,7 @@ class MainWindow(QMainWindow):
 
     def _open_dir(self, path):
         if os.path.exists(path):
-            if platform.system() == "Windows": os.startfile(path)
-            elif platform.system() == "Darwin": os.system(f"open '{path}'")
+            open_file_or_dir(path)
 
     def _setup_ui(self):
         self.splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -1696,18 +1903,17 @@ class MainWindow(QMainWindow):
         if widget:
             fp = widget.current_fp or ''
             if fp and os.path.exists(fp):
-                if platform.system() == "Windows": os.startfile(fp)
-                elif platform.system() == "Darwin": os.system(f"open '{fp}'")
+                open_file_or_dir(fp)
             else:
                 record = widget.record
                 channel = sanitize_filename(record.get('channel', '')) if record.get('channel') else ''
                 ch_dir = os.path.join(self.path_input.text(), channel) if channel else ''
                 if ch_dir and os.path.isdir(ch_dir):
-                    os.startfile(ch_dir)
+                    open_file_or_dir(ch_dir)
                     self.log_msg(f"⚠️ 檔案遺失，已開啟頻道目錄: {ch_dir}")
                 else:
                     fallback = self.path_input.text() or BASE_DIR
-                    if os.path.isdir(fallback): os.startfile(fallback)
+                    if os.path.isdir(fallback): open_file_or_dir(fallback)
                     self.log_msg(f"⚠️ 檔案遺失，已開啟下載目錄: {fallback}")
 
     def _on_history_reordered(self):
@@ -1760,15 +1966,15 @@ class MainWindow(QMainWindow):
             fp = widget.current_fp or ''
             folder = os.path.dirname(fp) if fp else ''
             if folder and os.path.exists(folder):
-                os.startfile(folder)
+                open_file_or_dir(folder)
             else:
                 channel = sanitize_filename(record.get('channel', '')) if record.get('channel') else ''
                 ch_dir = os.path.join(self.path_input.text(), channel) if channel else ''
                 if ch_dir and os.path.isdir(ch_dir):
-                    os.startfile(ch_dir)
+                    open_file_or_dir(ch_dir)
                 else:
                     fallback = self.path_input.text() or BASE_DIR
-                    if os.path.isdir(fallback): os.startfile(fallback)
+                    if os.path.isdir(fallback): open_file_or_dir(fallback)
         elif action == a_copy:
             QApplication.clipboard().setText(record.get('url', ''))
         elif action == a_open:

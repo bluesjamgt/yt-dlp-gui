@@ -37,7 +37,7 @@ if platform.system() == "Darwin":
     except ImportError: pass
     ssl._create_default_https_context = ssl._create_unverified_context
 
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.0.1"
 if getattr(sys, 'frozen', False):
     BASE_DIR = os.path.dirname(sys.executable)
 else:
@@ -205,7 +205,7 @@ def sanitize_filename(filename):
 class UpdateWorker(QThread):
     progress_signal = pyqtSignal(int, int) 
     log_signal = pyqtSignal(str)
-    check_finished_signal = pyqtSignal(bool, str, str, str) 
+    check_finished_signal = pyqtSignal(bool, str, str, str, str) 
     download_finished_signal = pyqtSignal(bool, str) 
 
     def __init__(self, mode, url="", filepath=""):
@@ -243,10 +243,12 @@ class UpdateWorker(QThread):
             req = urllib.request.Request('https://api.github.com/repos/bluesjamgt/yt-dlp-gui/releases')
             req.add_header('User-Agent', 'yt-dlp-gui-updater')
             r = urllib.request.urlopen(req, timeout=10)
+            import json
             data = json.loads(r.read())
             
             latest_ver = APP_VERSION
-            latest_url, latest_filename = "", ""
+            latest_url, latest_filename, latest_body = "", "", ""
+            import platform
             is_win = platform.system() == "Windows"
             
             for d in data:
@@ -259,18 +261,20 @@ class UpdateWorker(QThread):
                             latest_ver = tag
                             latest_url = a.get('browser_download_url')
                             latest_filename = a.get('name')
+                            latest_body = d.get('body', '')
                         break
             if latest_url and latest_ver != APP_VERSION:
-                self.check_finished_signal.emit(True, latest_ver, latest_url, latest_filename)
+                self.check_finished_signal.emit(True, latest_ver, latest_url, latest_filename, latest_body)
             else:
                 self.log_signal.emit("✅ 目前已是最新版本。")
-                self.check_finished_signal.emit(False, "", "", "")
+                self.check_finished_signal.emit(False, "", "", "", "")
         except Exception as e:
             self.log_signal.emit(f"⚠️ 檢查更新失敗: {e}")
-            self.check_finished_signal.emit(False, "", "", "")
+            self.check_finished_signal.emit(False, "", "", "", "")
 
     def _do_download(self):
         import urllib.request
+        import os
         try:
             tmp_path = self.filepath + ".part"
             resume_header = {}
@@ -309,43 +313,92 @@ class UpdateWorker(QThread):
             self.log_signal.emit(f"⚠️ 下載更新失敗: {e}")
             self.download_finished_signal.emit(False, "")
 
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtWidgets import QMessageBox, QTextBrowser
 
 class UpdateDialog(QDialog):
-    def __init__(self, version, url, filename, parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("📥 軟體更新")
-        self.setFixedSize(350, 150)
-        self.url, self.filename = url, filename
+        self.setWindowTitle("☁️ Software Update")
+        self.setFixedSize(550, 420)
         
         layout = QVBoxLayout(self)
-        self.lbl = QLabel(f"發現新版本 {version}，是否立即下載更新？")
-        layout.addWidget(self.lbl)
+        
+        self.title_lbl = QLabel("Checking for updates...")
+        self.title_lbl.setStyleSheet("font-size: 18px; font-weight: bold;")
+        layout.addWidget(self.title_lbl)
+        
+        self.subtitle_lbl = QLabel(f"Current Version: yt-dlp GUI {APP_VERSION}")
+        layout.addWidget(self.subtitle_lbl)
+        
+        self.notes_lbl = QLabel("Release Notes:")
+        self.notes_lbl.setStyleSheet("font-weight: bold; margin-top: 10px;")
+        self.notes_lbl.setVisible(False)
+        layout.addWidget(self.notes_lbl)
+        
+        self.notes_browser = QTextBrowser()
+        self.notes_browser.setVisible(False)
+        self.notes_browser.setStyleSheet("background-color: transparent; border: none;")
+        layout.addWidget(self.notes_browser)
         
         self.pbar = QProgressBar()
         self.pbar.setValue(0)
         self.pbar.setVisible(False)
         layout.addWidget(self.pbar)
         
-        self.btn_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Yes | QDialogButtonBox.StandardButton.No)
-        self.btn_box.accepted.connect(self.start_download)
-        self.btn_box.rejected.connect(self.reject)
-        layout.addWidget(self.btn_box)
+        self.btn_box = QHBoxLayout()
+        layout.addLayout(self.btn_box)
+        self.btn_box.addStretch()
         
+        self.btn_cancel = QPushButton("Close")
+        self.btn_cancel.clicked.connect(self.reject)
+        self.btn_box.addWidget(self.btn_cancel)
+        
+        self.btn_install = QPushButton("Install Update")
+        self.btn_install.setVisible(False)
+        self.btn_install.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 5px 15px; border-radius: 4px;")
+        self.btn_install.clicked.connect(self.start_download)
+        self.btn_box.addWidget(self.btn_install)
+        
+        self.url = ""
+        self.filename = ""
+        
+        self.check_worker = UpdateWorker(mode='check')
+        self.check_worker.check_finished_signal.connect(self.on_check_done)
+        self.check_worker.start()
+
+    def on_check_done(self, has_update, version, url, filename, body):
+        if has_update:
+            self.title_lbl.setText("🎉 New version available!")
+            self.subtitle_lbl.setText(f"yt-dlp GUI {version} is now available - you have {APP_VERSION}.")
+            self.notes_lbl.setVisible(True)
+            self.notes_browser.setMarkdown(body if body else "*No release notes provided.*")
+            self.notes_browser.setVisible(True)
+            self.btn_install.setVisible(True)
+            self.btn_cancel.setText("Remind me later")
+            
+            self.url = url
+            self.filename = filename
+        else:
+            self.title_lbl.setText("✅ You're up to date!")
+            self.subtitle_lbl.setText(f"yt-dlp GUI {APP_VERSION} is currently the newest version available.")
+
     def start_download(self):
-        self.btn_box.button(QDialogButtonBox.StandardButton.Yes).setEnabled(False)
-        self.btn_box.button(QDialogButtonBox.StandardButton.No).setEnabled(False)
-        self.lbl.setText(f"正在下載 {self.filename}...")
+        self.btn_install.setEnabled(False)
+        self.btn_cancel.setEnabled(False)
+        self.title_lbl.setText("Downloading update...")
+        self.subtitle_lbl.setText(f"File: {self.filename}")
+        self.notes_lbl.setVisible(False)
+        self.notes_browser.setVisible(False)
         self.pbar.setVisible(True)
-        
+        import os
         tmp_dir = os.path.join(DATA_DIR, "tmp")
         os.makedirs(tmp_dir, exist_ok=True)
         save_path = os.path.join(tmp_dir, self.filename)
         
-        self.worker = UpdateWorker(mode='download', url=self.url, filepath=save_path)
-        self.worker.progress_signal.connect(self.update_progress)
-        self.worker.download_finished_signal.connect(self.download_finished)
-        self.worker.start()
+        self.dl_worker = UpdateWorker(mode='download', url=self.url, filepath=save_path)
+        self.dl_worker.progress_signal.connect(self.update_progress)
+        self.dl_worker.download_finished_signal.connect(self.download_finished)
+        self.dl_worker.start()
         
     def update_progress(self, dl_size, total):
         if total > 0:
@@ -355,23 +408,25 @@ class UpdateDialog(QDialog):
     def download_finished(self, success, filepath):
         if success:
             self.accept()
+            import platform, os, sys
+            from PyQt6.QtWidgets import QMessageBox, QApplication
             if platform.system() == "Windows":
                 bat_path = os.path.join(BASE_DIR, "update.bat")
                 exe_name = os.path.basename(sys.executable)
                 if getattr(sys, 'frozen', False):
                     with open(bat_path, "w", encoding="utf-8") as f:
-                        f.write(f'''@echo off\necho 正在更新 yt-dlp GUI... 請稍候...\ntimeout /T 2 /NOBREAK > nul\ndel "{exe_name}"\ncopy /Y "{filepath}" "{exe_name}"\nstart "" "{exe_name}"\ndel "%~f0"\n''')
+                        f.write(f'@echo off\necho 正在更新 yt-dlp GUI... 請稍候...\ntimeout /T 2 /NOBREAK > nul\ndel "{exe_name}"\ncopy /Y "{filepath}" "{exe_name}"\nstart "" "{exe_name}"\ndel "%~f0"\n')
                     import subprocess
                     subprocess.Popen([bat_path], shell=True, cwd=BASE_DIR)
                     QApplication.quit()
                 else:
-                    QMessageBox.information(self, "更新完成", f"已下載至 {filepath}\\n(因以腳本運行，請手動替換執行檔)")
+                    QMessageBox.information(self, "Update Complete", f"Downloaded to {filepath}\n(Manual replacement needed since running as script)")
             else:
-                QMessageBox.information(self, "更新完成", f"已下載至 {filepath}\\n請手動替換您的應用程式。")
+                QMessageBox.information(self, "Update Complete", f"Downloaded to {filepath}\nPlease manually replace the application.")
         else:
-            self.lbl.setText("下載失敗！請查看紀錄。")
-            self.btn_box.button(QDialogButtonBox.StandardButton.No).setEnabled(True)
-            self.btn_box.button(QDialogButtonBox.StandardButton.No).setText("關閉")
+            self.title_lbl.setText("❌ Download failed!")
+            self.btn_cancel.setEnabled(True)
+            self.btn_cancel.setText("Close")
 
 class ThumbnailWorker(QThread):
     finished_signal = pyqtSignal(str, str)
@@ -1065,15 +1120,8 @@ class MainWindow(QMainWindow):
         self.tools_menu.addAction(self.scan_all_action)
 
     def check_update(self):
-        self.check_update_worker = UpdateWorker(mode='check')
-        self.check_update_worker.log_signal.connect(self.log_msg)
-        self.check_update_worker.check_finished_signal.connect(self._on_update_check_done)
-        self.check_update_worker.start()
-        
-    def _on_update_check_done(self, has_update, version, url, filename):
-        if has_update:
-            self.update_dlg = UpdateDialog(version, url, filename, self)
-            self.update_dlg.exec()
+        self.update_dlg = UpdateDialog(self)
+        self.update_dlg.exec()
 
     def import_old_json(self):
         path, _ = QFileDialog.getOpenFileName(self, "匯入舊版 JSON 歷史", BASE_DIR, "JSON Files (*.json)")

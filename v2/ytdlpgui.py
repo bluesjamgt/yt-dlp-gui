@@ -1,4 +1,4 @@
-# yt-dlp Downloader GUI v2.1.0 (Auto-Updater added, Native Checkbox, MenuBar I18N, Fixed Download)
+# yt-dlp Downloader GUI v2.1.1 (Auto-Updater added, Native Checkbox, MenuBar I18N, Fixed Download)
 import os
 import sys
 import json
@@ -39,7 +39,11 @@ if platform.system() == "Darwin":
 
 APP_VERSION = "2.1.0"
 if getattr(sys, 'frozen', False):
-    BASE_DIR = os.path.dirname(sys.executable)
+    exe_dir = os.path.dirname(sys.executable)
+    if "Contents/MacOS" in exe_dir:
+        BASE_DIR = os.path.abspath(os.path.join(exe_dir, "../../.."))
+    else:
+        BASE_DIR = exe_dir
 else:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -361,6 +365,7 @@ class UpdateDialog(QDialog):
         
         self.url = ""
         self.filename = ""
+        self.new_version = ""
         
         self.check_worker = UpdateWorker(mode='check')
         self.check_worker.check_finished_signal.connect(self.on_check_done)
@@ -378,6 +383,7 @@ class UpdateDialog(QDialog):
             
             self.url = url
             self.filename = filename
+            self.new_version = version
         else:
             self.title_lbl.setText("✅ You're up to date!")
             self.subtitle_lbl.setText(f"yt-dlp GUI {APP_VERSION} is currently the newest version available.")
@@ -422,7 +428,26 @@ class UpdateDialog(QDialog):
                 else:
                     QMessageBox.information(self, "Update Complete", f"Downloaded to {filepath}\n(Manual replacement needed since running as script)")
             else:
-                QMessageBox.information(self, "Update Complete", f"Downloaded to {filepath}\nPlease manually replace the application.")
+                if platform.system() == "Darwin" and filepath.endswith(".dmg"):
+                    from PyQt6.QtCore import QSettings
+                    settings = QSettings("Antigravity", "yt-dlp-gui")
+                    settings.setValue("pending_mac_update_path", filepath)
+                    settings.setValue("pending_mac_update_version", self.new_version)
+                    
+                    reply = QMessageBox.question(
+                        self, 
+                        "💡 更新下載完成 / Update Complete", 
+                        f"新版本 (v{self.new_version}) 的更新檔（DMG）已成功下載！\n\n您要現在開啟它來進行覆蓋安裝嗎？\n（選擇「現在安裝」會自動掛載更新檔並關閉此程式，以方便您進行覆蓋；選擇「稍後詢問」則下次啟動時會再次提醒您）",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.Yes
+                    )
+                    
+                    if reply == QMessageBox.StandardButton.Yes:
+                        import subprocess
+                        subprocess.run(["open", filepath])  # 自動開啟並掛載 DMG
+                        QApplication.quit()
+                else:
+                    QMessageBox.information(self, "Update Complete", f"Downloaded to {filepath}\nPlease manually replace the application.")
         else:
             self.title_lbl.setText("❌ Download failed!")
             self.btn_cancel.setEnabled(True)
@@ -744,9 +769,16 @@ class DownloadWorker(QThread):
             BIN_DIR = BASE_DIR      # 開發環境目錄
             
         ffmpeg_exe_path = os.path.join(BIN_DIR, ffmpeg_exe)
+        parent_dir = os.path.dirname(BIN_DIR)
+        parent_ffmpeg_path = os.path.join(parent_dir, ffmpeg_exe)
         
-        # 將 yt-dlp 的 ffmpeg_location 指向正確的 BIN_DIR
-        ydl_opts_base = {'ffmpeg_location': BIN_DIR} if os.path.exists(ffmpeg_exe_path) else {}
+        # 將 yt-dlp 的 ffmpeg_location 指向正確的目錄
+        if os.path.exists(ffmpeg_exe_path):
+            ydl_opts_base = {'ffmpeg_location': BIN_DIR}
+        elif not getattr(sys, 'frozen', False) and os.path.exists(parent_ffmpeg_path):
+            ydl_opts_base = {'ffmpeg_location': parent_dir}
+        else:
+            ydl_opts_base = {}
         
         if not ydl_opts_base and getattr(sys, 'frozen', False):
             self.log_signal.emit(f"⚠️ 警告: 找不到打包的 ffmpeg，路徑 {ffmpeg_exe_path} 不存在。")
@@ -974,6 +1006,46 @@ class MainWindow(QMainWindow):
         self._restore_settings_to_ui()
         self.update_ui_language()
         self.load_history_list()
+        
+        if platform.system() == "Darwin":
+            from PyQt6.QtCore import QTimer
+            QTimer.singleShot(500, self._check_pending_mac_update)
+
+    def _compare_versions(self, v1, v2):
+        def parse(v):
+            m = re.search(r'(\d+(?:\.\d+)*)', v)
+            return [int(x) for x in m.group(1).split('.')] if m else [0]
+        n1, n2 = parse(v1), parse(v2)
+        length = max(len(n1), len(n2))
+        n1.extend([0] * (length - len(n1)))
+        n2.extend([0] * (length - len(n2)))
+        return (n1 > n2) - (n1 < n2)
+
+    def _check_pending_mac_update(self):
+        from PyQt6.QtCore import QSettings
+        from PyQt6.QtWidgets import QMessageBox
+        settings = QSettings("Antigravity", "yt-dlp-gui")
+        pending_path = settings.value("pending_mac_update_path", "")
+        pending_ver = settings.value("pending_mac_update_version", "")
+        
+        if pending_ver and self._compare_versions(APP_VERSION, pending_ver) >= 0:
+            settings.remove("pending_mac_update_path")
+            settings.remove("pending_mac_update_version")
+            return
+            
+        if pending_path and os.path.exists(pending_path):
+            reply = QMessageBox.question(
+                self, 
+                "💡 發現已下載的更新檔 / Pending Update Found", 
+                f"偵測到您先前已下載新版本 (v{pending_ver}) 的更新檔（DMG）。\n\n是否要現在開啟它來進行覆蓋安裝？\n（選擇「現在安裝」會自動掛載更新檔並關閉此程式，以方便您進行覆蓋；選擇「稍後詢問」則下次啟動時會再次詢問您）",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                import subprocess
+                subprocess.run(["open", pending_path])
+                QApplication.quit()
+                sys.exit(0)
 
     def _load_old_config(self):
         default_config = {
@@ -2154,6 +2226,21 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    
+    # --- 🍎 Mac 專用：防止直接在 DMG 或沙盒（Translocation）中執行 ---
+    if platform.system() == "Darwin" and getattr(sys, 'frozen', False):
+        exe_path = sys.executable
+        if "/Volumes/" in exe_path or "AppTranslocation" in exe_path or "/var/folders/" in exe_path:
+            from PyQt6.QtWidgets import QMessageBox
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setWindowTitle("💡 系統提示 / System Notification")
+            msg.setText("偵測到您直接從「安裝磁碟 (DMG)」或「系統唯讀沙盒」中啟動程式。\n\n為了確保您的下載歷史紀錄與設定能正常保存，請先將此軟體拖曳移至「應用程式 (Applications)」資料夾中，再從那裡雙擊啟動程式！")
+            msg.setInformativeText("（若您先前已搬移過，請關閉本視窗並至您的「應用程式」資料夾中點選啟動即可）")
+            msg.addButton(QMessageBox.StandardButton.Ok)
+            msg.exec()
+            sys.exit(0)
+            
     if hasattr(Qt.ApplicationAttribute, 'AA_UseHighDpiPixmaps'):
         app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
     window = MainWindow()

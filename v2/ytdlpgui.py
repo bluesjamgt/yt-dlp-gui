@@ -16,7 +16,7 @@ from PyQt6.QtWidgets import (
     QFileDialog, QSpinBox, QDialog, QDialogButtonBox, QListWidgetItem, QMenu
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize
-from PyQt6.QtGui import QAction, QPixmap
+from PyQt6.QtGui import QAction, QPixmap, QIcon, QPainter, QPen, QColor
 import webbrowser
 
 try:
@@ -37,7 +37,7 @@ if platform.system() == "Darwin":
     except ImportError: pass
     ssl._create_default_https_context = ssl._create_unverified_context
 
-APP_VERSION = "2.1.0"
+APP_VERSION = "2.1.1"
 if getattr(sys, 'frozen', False):
     exe_dir = os.path.dirname(sys.executable)
     if "Contents/MacOS" in exe_dir:
@@ -62,7 +62,9 @@ REVERSE_AUDIO_QUALITY_MAP = {v: k for k, v in AUDIO_QUALITY_MAP.items()}
 
 I18N = {
     "en": {
-        "url": "URL:", "analyze": "Analyze", "limit": "Limit (0=All):",
+        "url": "URL:", "analyze": "Analyze", "url_clear": "Clear",
+        "url_clear_current": "Clear This Entry", "url_clear_list": "Clear List",
+        "limit": "Limit (0=All):",
         "type": "Type:", "res": "Res:", "audio": "Audio:", "path": "Path:",
         "browse": "Browse...", "open": "Open", "embed_thumb": "Embed Thumbnail",
         "add_track": "Add Track Num", "dl_subtitles": "Download Subtitles", 
@@ -85,7 +87,7 @@ I18N = {
         "ctx_dl_video": "🎬 Download Video Directly",
         "ctx_dl_audio": "🎵 Download Audio Directly",
         "ctx_dl_cover": "🖼️ Download Thumbnail (Cover)",
-        "tb_video": "🎬 Video", "tb_audio": "🎵 Audio", "tb_cover": "🖼️ Cover",
+        "tb_video": "🎬 Download Video", "tb_audio": "🎵 Download Audio", "tb_cover": "🖼️ Download Cover",
         "tb_remove": "❌ Remove", "tb_clear_dead": "🧹 Clear Dead", "ph_search": "🔍 Search Title, Channel, URL...",
         "action_dl_organize": "📁 Download Organization...",
         "dlg_organize_title": "Download Organization Settings",
@@ -105,7 +107,9 @@ I18N = {
         "log_dl_cancelled": "Cancelled by user"
     },
     "zh-TW": {
-        "url": "影片網址:", "analyze": "分析", "limit": "解析限制 (0=全部):",
+        "url": "影片網址:", "analyze": "分析", "url_clear": "清除",
+        "url_clear_current": "清除此列", "url_clear_list": "清除列表",
+        "limit": "解析限制 (0=全部):",
         "type": "格式類型:", "res": "最高畫質:", "audio": "音質:", "path": "儲存路徑:",
         "browse": "瀏覽...", "open": "開啟", "embed_thumb": "寫入封面圖",
         "add_track": "加入音軌序號", "dl_subtitles": "下載字幕", 
@@ -128,7 +132,7 @@ I18N = {
         "ctx_dl_video": "🎬 下載影片 (Video)",
         "ctx_dl_audio": "🎵 下載音訊 (Audio)",
         "ctx_dl_cover": "🖼️ 下載縮圖 (Cover)",
-        "tb_video": "🎬 影片", "tb_audio": "🎵 音訊", "tb_cover": "🖼️ 縮圖",
+        "tb_video": "🎬 下載影片", "tb_audio": "🎵 下載音訊", "tb_cover": "🖼️ 下載縮圖",
         "tb_remove": "❌ 刪除列表", "tb_clear_dead": "🧹 清除失效", "ph_search": "🔍 搜尋標題、頻道、網址...",
         "action_dl_organize": "⚙️ 下載設定 ..",
         "dlg_organize_title": "下載路徑分類設定",
@@ -148,7 +152,9 @@ I18N = {
         "log_dl_cancelled": "手動取消下載"
     },
     "ja": {
-        "url": "URL:", "analyze": "分析", "limit": "制限 (0=全て):",
+        "url": "URL:", "analyze": "分析", "url_clear": "クリア",
+        "url_clear_current": "この項目をクリア", "url_clear_list": "リストをクリア",
+        "limit": "制限 (0=全て):",
         "type": "形式:", "res": "解像度:", "audio": "音声:", "path": "保存先:",
         "browse": "参照...", "open": "開く", "embed_thumb": "サムネイル追加",
         "add_track": "トラック番号追加", "dl_subtitles": "字幕をダウンロード", 
@@ -171,7 +177,7 @@ I18N = {
         "ctx_dl_video": "🎬 動画をダウンロード (Video)",
         "ctx_dl_audio": "🎵 音声をダウンロード (Audio)",
         "ctx_dl_cover": "🖼️ サムネイルをダウンロード (Cover)",
-        "tb_video": "🎬 動画", "tb_audio": "🎵 音声", "tb_cover": "🖼️ サムネイル",
+        "tb_video": "🎬 動画をダウンロード", "tb_audio": "🎵 音声をダウンロード", "tb_cover": "🖼️ サムネイルをダウンロード",
         "tb_remove": "❌ 削除", "tb_clear_dead": "🧹 無効な履歴をクリア", "ph_search": "🔍 タイトル、チャンネル、URLを検索...",
         "action_dl_organize": "📁 ダウンロード整理設定...",
         "dlg_organize_title": "ダウンロード整理設定",
@@ -205,6 +211,26 @@ def open_file_or_dir(path):
 
 def sanitize_filename(filename): 
     return re.sub(r'[\\/:*?"<>|]', '_', filename).strip().rstrip('.')
+
+def make_chevron_icon(direction, color="#374151"):
+    """Draw a font-independent chevron icon for panel controls."""
+    pixmap = QPixmap(16, 16)
+    pixmap.fill(Qt.GlobalColor.transparent)
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    pen = QPen(QColor(color))
+    pen.setWidthF(2.2)
+    pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+    pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
+    painter.setPen(pen)
+    if direction == "left":
+        painter.drawLine(10, 3, 5, 8)
+        painter.drawLine(5, 8, 10, 13)
+    else:
+        painter.drawLine(6, 3, 11, 8)
+        painter.drawLine(11, 8, 6, 13)
+    painter.end()
+    return QIcon(pixmap)
 
 class UpdateWorker(QThread):
     progress_signal = pyqtSignal(int, int) 
@@ -1407,8 +1433,11 @@ class MainWindow(QMainWindow):
         
         # 💡 左側收合按鈕 (<) 放在最左邊
         lh = QHBoxLayout()
-        self.btn_hide_left = QPushButton("◀")
-        self.btn_hide_left.setFixedSize(26, 26)
+        self.btn_hide_left = QPushButton()
+        self.btn_hide_left.setIcon(make_chevron_icon("left"))
+        self.btn_hide_left.setIconSize(QSize(16, 16))
+        self.btn_hide_left.setFixedSize(28, 28)
+        self.btn_hide_left.setToolTip("收起左側面板")
         self.btn_hide_left.clicked.connect(lambda: self._toggle_panel('left', False))
         lh.addWidget(self.btn_hide_left)
         
@@ -1416,8 +1445,11 @@ class MainWindow(QMainWindow):
         lh.addWidget(self.lbl_control_title)
         lh.addStretch()
         
-        self.btn_unhide_right = QPushButton("◀")
-        self.btn_unhide_right.setFixedSize(26, 26)
+        self.btn_unhide_right = QPushButton()
+        self.btn_unhide_right.setIcon(make_chevron_icon("right"))
+        self.btn_unhide_right.setIconSize(QSize(16, 16))
+        self.btn_unhide_right.setFixedSize(28, 28)
+        self.btn_unhide_right.setToolTip("展開右側面板")
         self.btn_unhide_right.clicked.connect(lambda: self._toggle_panel('right', True))
         self.btn_unhide_right.setVisible(False)
         lh.addWidget(self.btn_unhide_right)
@@ -1430,7 +1462,18 @@ class MainWindow(QMainWindow):
         self.url_input.addItems(self.loaded_config.get("url_history", []))
         self.btn_analyze = QPushButton("分析 (Analyze)")
         self.btn_analyze.clicked.connect(self.start_parse)
-        ul.addWidget(self.lbl_url); ul.addWidget(self.url_input, stretch=1); ul.addWidget(self.btn_analyze)
+        self.btn_url_clear = QPushButton("清除")
+        self.btn_url_clear.setToolTip("選擇清除此列或清除全部網址列表")
+        self.url_clear_menu = QMenu(self.btn_url_clear)
+        self.action_clear_current_url = self.url_clear_menu.addAction("清除此列")
+        self.action_clear_current_url.triggered.connect(self._clear_current_url)
+        self.action_clear_url_history = self.url_clear_menu.addAction("清除列表")
+        self.action_clear_url_history.triggered.connect(self._clear_all_urls)
+        self.btn_url_clear.setMenu(self.url_clear_menu)
+        ul.addWidget(self.lbl_url)
+        ul.addWidget(self.url_input, stretch=1)
+        ul.addWidget(self.btn_analyze)
+        ul.addWidget(self.btn_url_clear)
         left_layout.addLayout(ul)
 
         ll = QHBoxLayout()
@@ -1561,14 +1604,20 @@ class MainWindow(QMainWindow):
         
         # 💡 右側收合按鈕 (>) 放在最左邊
         rh = QHBoxLayout()
-        self.btn_unhide_left = QPushButton("▶")
-        self.btn_unhide_left.setFixedSize(26, 26)
+        self.btn_unhide_left = QPushButton()
+        self.btn_unhide_left.setIcon(make_chevron_icon("left"))
+        self.btn_unhide_left.setIconSize(QSize(16, 16))
+        self.btn_unhide_left.setFixedSize(28, 28)
+        self.btn_unhide_left.setToolTip("展開左側面板")
         self.btn_unhide_left.clicked.connect(lambda: self._toggle_panel('left', True))
         self.btn_unhide_left.setVisible(False)
         rh.addWidget(self.btn_unhide_left)
 
-        self.btn_hide_right = QPushButton("▶")
-        self.btn_hide_right.setFixedSize(26, 26)
+        self.btn_hide_right = QPushButton()
+        self.btn_hide_right.setIcon(make_chevron_icon("right"))
+        self.btn_hide_right.setIconSize(QSize(16, 16))
+        self.btn_hide_right.setFixedSize(28, 28)
+        self.btn_hide_right.setToolTip("收起右側面板")
         self.btn_hide_right.clicked.connect(lambda: self._toggle_panel('right', False))
         rh.addWidget(self.btn_hide_right)
 
@@ -1635,8 +1684,21 @@ class MainWindow(QMainWindow):
         """)
         self.btn_download.setStyleSheet("QPushButton { background-color: #10B981; color: white; font-size: 15px; padding: 10px; } QPushButton:hover { background-color: #059669; }")
         self.btn_analyze.setStyleSheet("QPushButton { background-color: #3B82F6; color: white; } QPushButton:hover { background-color: #2563EB; }")
+        self.btn_url_clear.setStyleSheet(
+            "QPushButton { background-color: #E5E7EB; border: none; padding: 6px 24px 6px 12px; "
+            "border-radius: 4px; color: #374151; font-weight: bold; } "
+            "QPushButton:hover { background-color: #D1D5DB; } "
+            "QPushButton::menu-indicator { subcontrol-origin: padding; "
+            "subcontrol-position: center right; right: 7px; }"
+        )
+        self.url_clear_menu.setMinimumWidth(120)
         
-        astyle = "QPushButton { background-color: #E5E7EB; border: none; border-radius: 4px; font-size: 14px; color: #374151; } QPushButton:hover { background-color: #D1D5DB; color: #10B981; }"
+        astyle = (
+            "QPushButton { background-color: #E5E7EB; border: none; border-radius: 6px; "
+            "padding: 0px; } "
+            "QPushButton:hover { background-color: #D1D5DB; } "
+            "QPushButton:pressed { background-color: #C7CDD6; }"
+        )
         for btn in [self.btn_hide_left, self.btn_unhide_left, self.btn_hide_right, self.btn_unhide_right]:
             btn.setStyleSheet(astyle)
             
@@ -1667,6 +1729,9 @@ class MainWindow(QMainWindow):
         lang = I18N.get(self.current_lang, I18N["zh-TW"])
         self.lbl_url.setText(lang["url"])
         self.btn_analyze.setText(lang["analyze"])
+        self.btn_url_clear.setText(lang.get("url_clear", "Clear"))
+        self.action_clear_current_url.setText(lang.get("url_clear_current", "Clear This Entry"))
+        self.action_clear_url_history.setText(lang.get("url_clear_list", "Clear List"))
         self.lbl_limit.setText(lang["limit"])
         self.lbl_type.setText(lang["type"])
         self.lbl_res.setText(lang["res"])
@@ -1726,6 +1791,29 @@ class MainWindow(QMainWindow):
     def browse_path(self):
         d = QFileDialog.getExistingDirectory(self, "選擇資料夾")
         if d: self.path_input.setText(d)
+
+    def _persist_url_history(self):
+        try:
+            with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.loaded_config, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            self.log_msg(f"儲存網址歷史失敗: {e}")
+
+    def _clear_current_url(self):
+        url = self.url_input.currentText().strip()
+        history = self.loaded_config.get("url_history", [])
+        self.loaded_config["url_history"] = [item for item in history if item != url]
+        for index in range(self.url_input.count() - 1, -1, -1):
+            if self.url_input.itemText(index) == url:
+                self.url_input.removeItem(index)
+        self.url_input.setCurrentText("")
+        self._persist_url_history()
+
+    def _clear_all_urls(self):
+        self.loaded_config["url_history"] = []
+        self.url_input.clear()
+        self.url_input.setCurrentText("")
+        self._persist_url_history()
 
     def _toggle_panel(self, panel_name, show):
         if panel_name == 'left':

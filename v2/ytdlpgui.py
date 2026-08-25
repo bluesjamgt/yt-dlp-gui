@@ -1,4 +1,4 @@
-# yt-dlp Downloader GUI v2.1.2 (Auto-Updater added, Native Checkbox, MenuBar I18N, Fixed Download)
+# yt-dlp Downloader GUI v2.1.3 (Auto-Updater Diagnostics, Native Checkbox, MenuBar I18N, Fixed Download)
 import os
 import sys
 import json
@@ -37,7 +37,7 @@ if platform.system() == "Darwin":
     except ImportError: pass
     ssl._create_default_https_context = ssl._create_unverified_context
 
-APP_VERSION = "2.1.2"
+APP_VERSION = "2.1.3"
 if getattr(sys, 'frozen', False):
     exe_dir = os.path.dirname(sys.executable)
     if "Contents/MacOS" in exe_dir:
@@ -198,6 +198,58 @@ I18N = {
     }
 }
 
+UPDATE_RELEASES_URL = "https://github.com/bluesjamgt/yt-dlp-gui/releases"
+UPDATE_I18N = {
+    "zh-TW": {
+        "window_title": "Software Update Status", "checking_badge": "正在檢查", "checking_title": "正在檢查更新",
+        "current_version": "目前版本：yt-dlp GUI {version}", "checking_section": "更新檢查中",
+        "checking_body": "正在向 GitHub 查詢適用於此平台的最新 Release…", "api_connecting": "GitHub API：正在建立連線…",
+        "diagnostic_title": "連線診斷", "retry": "重新檢查", "close": "關閉", "install": "下載並安裝", "later": "稍後再說",
+        "update_badge": "可更新版本", "update_title": "已有新版可供下載", "update_subtitle": "{version} 已推出；目前使用 v{current}",
+        "update_section": "本次更新內容", "no_notes": "*未提供更新說明。*", "up_to_date_badge": "已是最新版",
+        "up_to_date_title": "你目前使用的已是最新版本", "up_to_date_subtitle": "yt-dlp GUI v{version} 不需要更新",
+        "up_to_date_section": "更新狀態", "up_to_date_body": "版本已與 GitHub Release 比對完成。\n目前沒有適用於此平台的較新更新檔。",
+        "error_badge": "檢查失敗", "error_title": "暫時無法檢查更新", "error_subtitle": "這不代表目前版本已是最新版",
+        "error_section": "可以嘗試的做法", "error_body": "請確認可開啟 GitHub API 網址後再按「重新檢查」。<br>若仍無法更新，請複製下方「連線診斷」內容提供給開發者，或手動確認 <a href=\"{url}\">版本發布狀態</a>。",
+        "downloading_badge": "正在下載", "downloading_title": "正在下載更新檔", "downloading_file": "檔案：{filename}", "downloading_section": "下載進度", "downloading_body": "下載完成後，程式會準備替換並重新啟動。",
+        "download_failed_badge": "下載失敗", "download_failed_title": "更新檔下載失敗", "download_failed_subtitle": "請檢查網路後再次執行更新檢查",
+        "api_connecting_log": "正在連線至 GitHub API…", "api_success_log": "GitHub API：連線成功，收到 {count} 個 Release。",
+        "api_success_update": "GitHub API：連線成功\n平台：{platform}\n找到可更新版本：{version}\n更新檔：{filename}",
+        "api_success_latest": "GitHub API：連線成功\n平台：{platform}\n已比對可用更新檔，目前版本 {version} 已是最新版。",
+        "api_latest_log": "GitHub API：已完成版本比對，目前已是最新版。", "api_failed": "GitHub API：檢查失敗\n原因：{title}\n詳細資料：{detail}",
+        "ssl_title": "SSL 憑證驗證失敗", "ssl_detail": "此電腦的 Python HTTPS 憑證信任鏈無法驗證 GitHub。",
+        "timeout_title": "連線逾時", "timeout_detail": "GitHub API 在 15 秒內沒有回應；請檢查網路、Proxy 或防火牆。",
+        "http_403_title": "GitHub API 拒絕存取 (HTTP 403)", "http_403_detail": "可能是網路政策、Proxy 或 API 存取限制。",
+        "http_429_title": "GitHub API 請求過多 (HTTP 429)", "http_429_detail": "請稍候再試。",
+        "dns_title": "DNS 解析失敗", "dns_detail": "無法將 api.github.com 解析為網路位址。",
+        "connection_title": "GitHub API 連線失敗", "invalid_response": "GitHub API 回傳的 Release 資料格式不正確。", "download_failed_log": "下載更新失敗：{error}",
+        "platform_win": "Windows", "platform_mac": "macOS"
+    },
+    "en": {
+        "window_title": "Software Update Status", "checking_badge": "CHECKING", "checking_title": "Checking for updates",
+        "current_version": "Current version: yt-dlp GUI {version}", "checking_section": "Update check", "checking_body": "Checking GitHub for the latest Release for this platform…", "api_connecting": "GitHub API: Connecting…",
+        "diagnostic_title": "Connection diagnostics", "retry": "Check Again", "close": "Close", "install": "Download and Install", "later": "Remind Me Later",
+        "update_badge": "UPDATE AVAILABLE", "update_title": "A new version is available", "update_subtitle": "{version} is available; you are using v{current}", "update_section": "What’s new", "no_notes": "*No release notes provided.*",
+        "up_to_date_badge": "UP TO DATE", "up_to_date_title": "You are using the latest version", "up_to_date_subtitle": "yt-dlp GUI v{version} does not need an update", "up_to_date_section": "Update status", "up_to_date_body": "The version was compared with GitHub Releases.\nThere is no newer update file for this platform.",
+        "error_badge": "CHECK FAILED", "error_title": "Unable to check for updates", "error_subtitle": "This does not mean you are on the latest version", "error_section": "What you can try", "error_body": "Confirm that the GitHub API URL opens, then select “Check Again”.<br>If updates still fail, copy the “Connection diagnostics” below for the developer, or manually check the <a href=\"{url}\">release status</a>.",
+        "downloading_badge": "DOWNLOADING", "downloading_title": "Downloading update", "downloading_file": "File: {filename}", "downloading_section": "Download progress", "downloading_body": "After the download completes, the application will prepare the replacement and restart.",
+        "download_failed_badge": "DOWNLOAD FAILED", "download_failed_title": "Update download failed", "download_failed_subtitle": "Check your network, then run the update check again",
+        "api_connecting_log": "Connecting to GitHub API…", "api_success_log": "GitHub API: Connected successfully; received {count} Releases.",
+        "api_success_update": "GitHub API: Connected successfully\nPlatform: {platform}\nUpdate found: {version}\nAsset: {filename}", "api_success_latest": "GitHub API: Connected successfully\nPlatform: {platform}\nAvailable update files were compared; version {version} is up to date.", "api_latest_log": "GitHub API: Version comparison complete; you are up to date.", "api_failed": "GitHub API: Check failed\nReason: {title}\nDetails: {detail}",
+        "ssl_title": "SSL certificate verification failed", "ssl_detail": "Python HTTPS on this computer could not verify GitHub’s certificate trust chain.", "timeout_title": "Connection timed out", "timeout_detail": "GitHub API did not respond within 15 seconds. Check the network, proxy, or firewall.",
+        "http_403_title": "GitHub API access denied (HTTP 403)", "http_403_detail": "A network policy, proxy, or API access restriction may be blocking the request.", "http_429_title": "GitHub API rate limit reached (HTTP 429)", "http_429_detail": "Please wait and try again later.",
+        "dns_title": "DNS lookup failed", "dns_detail": "api.github.com could not be resolved to a network address.", "connection_title": "GitHub API connection failed", "invalid_response": "GitHub API returned an invalid Release data format.", "download_failed_log": "Update download failed: {error}", "platform_win": "Windows", "platform_mac": "macOS"
+    },
+    "ja": {
+        "window_title": "Software Update Status", "checking_badge": "確認中", "checking_title": "アップデートを確認中", "current_version": "現在のバージョン：yt-dlp GUI {version}", "checking_section": "アップデート確認", "checking_body": "このプラットフォーム用の最新 Release を GitHub に確認しています…", "api_connecting": "GitHub API：接続中…",
+        "diagnostic_title": "接続診断", "retry": "再確認", "close": "閉じる", "install": "ダウンロードしてインストール", "later": "後で通知", "update_badge": "更新あり", "update_title": "新しいバージョンがあります", "update_subtitle": "{version} が利用可能です。現在は v{current} を使用しています", "update_section": "更新内容", "no_notes": "*リリースノートはありません。*",
+        "up_to_date_badge": "最新です", "up_to_date_title": "現在のバージョンは最新です", "up_to_date_subtitle": "yt-dlp GUI v{version} は更新不要です", "up_to_date_section": "更新状態", "up_to_date_body": "GitHub Releases とバージョンを比較しました。\nこのプラットフォーム用の新しい更新ファイルはありません。",
+        "error_badge": "確認失敗", "error_title": "アップデートを確認できません", "error_subtitle": "これは最新バージョンであることを意味しません", "error_section": "試せること", "error_body": "GitHub API URL を開けることを確認してから「再確認」を押してください。<br>更新できない場合は、下の「接続診断」を開発者に送るか、<a href=\"{url}\">リリース状態</a>を手動で確認してください。",
+        "downloading_badge": "ダウンロード中", "downloading_title": "更新ファイルをダウンロード中", "downloading_file": "ファイル：{filename}", "downloading_section": "ダウンロード進行状況", "downloading_body": "完了後、アプリケーションを置き換えて再起動します。", "download_failed_badge": "ダウンロード失敗", "download_failed_title": "更新ファイルのダウンロードに失敗しました", "download_failed_subtitle": "ネットワークを確認してから再度更新を確認してください",
+        "api_connecting_log": "GitHub API に接続中…", "api_success_log": "GitHub API：接続成功。{count} 件の Release を受信しました。", "api_success_update": "GitHub API：接続成功\nプラットフォーム：{platform}\n更新あり：{version}\nファイル：{filename}", "api_success_latest": "GitHub API：接続成功\nプラットフォーム：{platform}\n更新ファイルを比較し、バージョン {version} は最新です。", "api_latest_log": "GitHub API：バージョン比較が完了しました。最新です。", "api_failed": "GitHub API：確認失敗\n理由：{title}\n詳細：{detail}",
+        "ssl_title": "SSL 証明書の検証に失敗", "ssl_detail": "このコンピューターの Python HTTPS が GitHub の証明書信頼チェーンを検証できません。", "timeout_title": "接続がタイムアウトしました", "timeout_detail": "GitHub API が 15 秒以内に応答しませんでした。ネットワーク、Proxy、ファイアウォールを確認してください。", "http_403_title": "GitHub API がアクセスを拒否しました (HTTP 403)", "http_403_detail": "ネットワークポリシー、Proxy、または API アクセス制限の可能性があります。", "http_429_title": "GitHub API の要求上限に達しました (HTTP 429)", "http_429_detail": "しばらく待ってから再試行してください。", "dns_title": "DNS 解決に失敗", "dns_detail": "api.github.com をネットワークアドレスに解決できません。", "connection_title": "GitHub API 接続失敗", "invalid_response": "GitHub API が無効な Release データ形式を返しました。", "download_failed_log": "更新ファイルのダウンロードに失敗：{error}", "platform_win": "Windows", "platform_mac": "macOS"
+    }
+}
 
 def open_file_or_dir(path):
     import platform, subprocess, os
@@ -233,16 +285,20 @@ def make_chevron_icon(direction, color="#374151"):
     return QIcon(pixmap)
 
 class UpdateWorker(QThread):
-    progress_signal = pyqtSignal(int, int) 
+    progress_signal = pyqtSignal(int, int)
     log_signal = pyqtSignal(str)
-    check_finished_signal = pyqtSignal(bool, str, str, str, str) 
-    download_finished_signal = pyqtSignal(bool, str) 
+    check_finished_signal = pyqtSignal(str, str, str, str, str, str)
+    download_finished_signal = pyqtSignal(bool, str)
 
-    def __init__(self, mode, url="", filepath=""):
+    def __init__(self, mode, url="", filepath="", lang_code="zh-TW"):
         super().__init__()
-        self.mode = mode 
+        self.mode = mode
         self.url = url
         self.filepath = filepath
+        self.text = UPDATE_I18N.get(lang_code, UPDATE_I18N["zh-TW"])
+
+    def tr(self, key, **kwargs):
+        return self.text[key].format(**kwargs)
 
     def _parse_version(self, v_str):
         m = re.search(r'(\d+(?:\.\d+)*)(.*)', v_str)
@@ -266,68 +322,85 @@ class UpdateWorker(QThread):
         if self.mode == 'check': self._do_check()
         elif self.mode == 'download': self._do_download()
 
+    def _describe_update_error(self, error):
+        """Return a user-reportable update-check error without weakening HTTPS."""
+        import socket
+        import ssl
+        import urllib.error
+        reason = error.reason if isinstance(error, urllib.error.URLError) else error
+        detail = str(reason).strip() or error.__class__.__name__
+        if isinstance(reason, ssl.SSLCertVerificationError) or "CERTIFICATE_VERIFY_FAILED" in detail.upper():
+            return self.tr("ssl_title"), self.tr("ssl_detail")
+        if isinstance(reason, (socket.timeout, TimeoutError)) or "timed out" in detail.lower():
+            return self.tr("timeout_title"), self.tr("timeout_detail")
+        if isinstance(error, urllib.error.HTTPError):
+            if error.code == 403: return self.tr("http_403_title"), self.tr("http_403_detail")
+            if error.code == 429: return self.tr("http_429_title"), self.tr("http_429_detail")
+            return f"GitHub API HTTP {error.code}", detail
+        if isinstance(reason, socket.gaierror) or "name or service not known" in detail.lower():
+            return self.tr("dns_title"), self.tr("dns_detail")
+        return self.tr("connection_title"), detail
+
     def _do_check(self):
         try:
-            self.log_signal.emit("🔄 正在檢查更新...")
+            self.log_signal.emit(self.tr("api_connecting_log"))
             import urllib.request
             req = urllib.request.Request('https://api.github.com/repos/bluesjamgt/yt-dlp-gui/releases')
             req.add_header('User-Agent', 'yt-dlp-gui-updater')
-            r = urllib.request.urlopen(req, timeout=10)
-            import json
+            req.add_header('Accept', 'application/vnd.github+json')
+            r = urllib.request.urlopen(req, timeout=15)
             data = json.loads(r.read())
-            
+            if not isinstance(data, list): raise ValueError(self.tr("invalid_response"))
+            self.log_signal.emit(self.tr("api_success_log", count=len(data)))
+
             latest_ver = APP_VERSION
             latest_url, latest_filename, latest_body = "", "", ""
-            import platform
             is_win = platform.system() == "Windows"
-            
-            for d in data:
-                tag = d.get('tag_name', '')
+            for release in data:
+                tag = release.get('tag_name', '')
                 if is_win and 'mac' in tag.lower(): continue
-                for a in d.get('assets', []):
-                    name = a.get('name', '').lower()
+                for asset in release.get('assets', []):
+                    name = asset.get('name', '').lower()
                     if (is_win and name.endswith('.exe')) or (not is_win and name.endswith('.dmg')):
                         if self._compare_versions(tag, latest_ver) > 0:
                             latest_ver = tag
-                            latest_url = a.get('browser_download_url')
-                            latest_filename = a.get('name')
-                            latest_body = d.get('body', '')
+                            latest_url = asset.get('browser_download_url')
+                            latest_filename = asset.get('name')
+                            latest_body = release.get('body', '')
                         break
+            platform_name = self.tr("platform_win") if is_win else self.tr("platform_mac")
             if latest_url and latest_ver != APP_VERSION:
-                self.check_finished_signal.emit(True, latest_ver, latest_url, latest_filename, latest_body)
+                diagnostic = self.tr("api_success_update", platform=platform_name, version=latest_ver, filename=latest_filename)
+                self.check_finished_signal.emit("update", latest_ver, latest_url, latest_filename, latest_body, diagnostic)
             else:
-                self.log_signal.emit("✅ 目前已是最新版本。")
-                self.check_finished_signal.emit(False, "", "", "", "")
+                diagnostic = self.tr("api_success_latest", platform=platform_name, version=APP_VERSION)
+                self.log_signal.emit(self.tr("api_latest_log"))
+                self.check_finished_signal.emit("up_to_date", "", "", "", "", diagnostic)
         except Exception as e:
-            self.log_signal.emit(f"⚠️ 檢查更新失敗: {e}")
-            self.check_finished_signal.emit(False, "", "", "", "")
+            title, detail = self._describe_update_error(e)
+            diagnostic = self.tr("api_failed", title=title, detail=detail)
+            self.log_signal.emit(diagnostic.replace("\n", "｜"))
+            self.check_finished_signal.emit("error", "", "", "", "", diagnostic)
 
     def _do_download(self):
         import urllib.request
-        import os
         try:
             tmp_path = self.filepath + ".part"
-            resume_header = {}
-            downloaded_size = 0
-            if os.path.exists(tmp_path):
-                downloaded_size = os.path.getsize(tmp_path)
-                resume_header = {'Range': f'bytes={downloaded_size}-'}
-                
-            req = urllib.request.Request(self.url, headers=resume_header)
+            downloaded_size = os.path.getsize(tmp_path) if os.path.exists(tmp_path) else 0
+            headers = {'Range': f'bytes={downloaded_size}-'} if downloaded_size else {}
+            req = urllib.request.Request(self.url, headers=headers)
             req.add_header('User-Agent', 'yt-dlp-gui-updater')
             try:
-                r = urllib.request.urlopen(req, timeout=10)
+                r = urllib.request.urlopen(req, timeout=15)
             except urllib.error.HTTPError as e:
-                if e.code == 416: 
+                if e.code == 416:
                     os.rename(tmp_path, self.filepath)
                     self.download_finished_signal.emit(True, self.filepath)
                     return
-                else: raise e
-                    
+                raise
             total_size = int(r.headers.get('Content-Length', 0)) + downloaded_size
-            mode = 'ab' if downloaded_size > 0 and r.status == 206 else 'wb'
+            mode = 'ab' if downloaded_size and r.status == 206 else 'wb'
             if mode == 'wb': downloaded_size = 0
-            
             with open(tmp_path, mode) as f:
                 while True:
                     chunk = r.read(8192)
@@ -335,12 +408,11 @@ class UpdateWorker(QThread):
                     f.write(chunk)
                     downloaded_size += len(chunk)
                     self.progress_signal.emit(downloaded_size, total_size)
-                    
             if os.path.exists(self.filepath): os.remove(self.filepath)
             os.rename(tmp_path, self.filepath)
             self.download_finished_signal.emit(True, self.filepath)
         except Exception as e:
-            self.log_signal.emit(f"⚠️ 下載更新失敗: {e}")
+            self.log_signal.emit(self.tr("download_failed_log", error=e))
             self.download_finished_signal.emit(False, "")
 
 from PyQt6.QtWidgets import QMessageBox, QTextBrowser
@@ -348,100 +420,185 @@ from PyQt6.QtWidgets import QMessageBox, QTextBrowser
 class UpdateDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("☁️ Software Update")
-        self.setFixedSize(550, 420)
-        
+        self.lang_code = getattr(parent, "current_lang", "zh-TW")
+        self.text = UPDATE_I18N.get(self.lang_code, UPDATE_I18N["zh-TW"])
+        self.setWindowTitle(self.tr("window_title"))
+        self.setFixedSize(610, 430)
+        self.url = ""
+        self.filename = ""
+        self.new_version = ""
+        self.check_worker = None
+        self.dl_worker = None
+
         layout = QVBoxLayout(self)
-        
-        self.title_lbl = QLabel("Checking for updates...")
-        self.title_lbl.setStyleSheet("font-size: 18px; font-weight: bold;")
-        layout.addWidget(self.title_lbl)
-        
-        self.subtitle_lbl = QLabel(f"Current Version: yt-dlp GUI {APP_VERSION}")
-        layout.addWidget(self.subtitle_lbl)
-        
-        self.notes_lbl = QLabel("Release Notes:")
-        self.notes_lbl.setStyleSheet("font-weight: bold; margin-top: 10px;")
-        self.notes_lbl.setVisible(False)
-        layout.addWidget(self.notes_lbl)
-        
+        layout.setContentsMargins(22, 22, 22, 18)
+        layout.setSpacing(14)
+
+        self.main_card = QFrame()
+        self.main_card.setObjectName("updateCard")
+        card_layout = QVBoxLayout(self.main_card)
+        card_layout.setContentsMargins(20, 18, 20, 16)
+        card_layout.setSpacing(10)
+        self.status_badge = QLabel()
+        self.status_badge.setObjectName("updateBadge")
+        self.title_lbl = QLabel()
+        self.title_lbl.setObjectName("updateTitle")
+        self.subtitle_lbl = QLabel()
+        self.subtitle_lbl.setObjectName("updateSubtitle")
+        card_layout.addWidget(self.status_badge, alignment=Qt.AlignmentFlag.AlignLeft)
+        card_layout.addWidget(self.title_lbl)
+        card_layout.addWidget(self.subtitle_lbl)
+        divider = QFrame()
+        divider.setObjectName("updateDivider")
+        divider.setFrameShape(QFrame.Shape.HLine)
+        card_layout.addWidget(divider)
+        self.notes_lbl = QLabel()
+        self.notes_lbl.setObjectName("updateSectionTitle")
+        card_layout.addWidget(self.notes_lbl)
         self.notes_browser = QTextBrowser()
-        self.notes_browser.setVisible(False)
-        self.notes_browser.setStyleSheet("background-color: transparent; border: none;")
-        layout.addWidget(self.notes_browser)
-        
+        self.notes_browser.setOpenExternalLinks(True)
+        self.notes_browser.setStyleSheet("QTextBrowser { background: transparent; border: none; color: #374151; font-size: 13px; padding: 0px; }")
+        card_layout.addWidget(self.notes_browser, stretch=1)
+        layout.addWidget(self.main_card, stretch=1)
+
+        self.diagnostic_card = QFrame()
+        self.diagnostic_card.setObjectName("diagnosticCard")
+        diagnostic_layout = QVBoxLayout(self.diagnostic_card)
+        diagnostic_layout.setContentsMargins(16, 12, 16, 12)
+        diagnostic_layout.setSpacing(5)
+        self.diagnostic_title = QLabel()
+        self.diagnostic_title.setObjectName("diagnosticTitle")
+        diagnostic_layout.addWidget(self.diagnostic_title)
+        self.diagnostic_lbl = QLabel()
+        self.diagnostic_lbl.setObjectName("diagnosticText")
+        self.diagnostic_lbl.setWordWrap(True)
+        self.diagnostic_lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        diagnostic_layout.addWidget(self.diagnostic_lbl)
+        layout.addWidget(self.diagnostic_card)
+
         self.pbar = QProgressBar()
         self.pbar.setValue(0)
         self.pbar.setVisible(False)
         layout.addWidget(self.pbar)
-        
-        self.btn_box = QHBoxLayout()
-        layout.addLayout(self.btn_box)
-        self.btn_box.addStretch()
-        
-        self.btn_cancel = QPushButton("Close")
+
+        buttons = QHBoxLayout()
+        buttons.addStretch()
+        self.btn_retry = QPushButton()
+        self.btn_retry.setVisible(False)
+        self.btn_retry.clicked.connect(self.start_check)
+        buttons.addWidget(self.btn_retry)
+        self.btn_cancel = QPushButton()
         self.btn_cancel.clicked.connect(self.reject)
-        self.btn_box.addWidget(self.btn_cancel)
-        
-        self.btn_install = QPushButton("Install Update")
+        buttons.addWidget(self.btn_cancel)
+        self.btn_install = QPushButton()
+        self.btn_install.setObjectName("installUpdate")
         self.btn_install.setVisible(False)
-        self.btn_install.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 5px 15px; border-radius: 4px;")
         self.btn_install.clicked.connect(self.start_download)
-        self.btn_box.addWidget(self.btn_install)
-        
-        self.url = ""
-        self.filename = ""
-        self.new_version = ""
-        
-        self.check_worker = UpdateWorker(mode='check')
+        buttons.addWidget(self.btn_install)
+        layout.addLayout(buttons)
+
+        self.setStyleSheet("""
+            QDialog { background: #F8FAFC; }
+            QFrame#updateCard { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 12px; }
+            QFrame#diagnosticCard { background: #F1F5F9; border: 1px solid #E2E8F0; border-radius: 10px; }
+            QFrame#updateDivider { color: #E5E7EB; background: transparent; border: none; }
+            QLabel#updateBadge { background: #E0E7FF; color: #3730A3; border-radius: 10px; padding: 3px 9px; font-size: 11px; font-weight: bold; }
+            QLabel#updateTitle { color: #111827; font-size: 20px; font-weight: bold; background: transparent; }
+            QLabel#updateSubtitle { color: #64748B; font-size: 13px; background: transparent; }
+            QLabel#updateSectionTitle { color: #1F2937; font-size: 14px; font-weight: bold; background: transparent; }
+            QLabel#diagnosticTitle { color: #475569; font-size: 12px; font-weight: bold; background: transparent; border: none; }
+            QLabel#diagnosticText { color: #475569; font-size: 12px; background: transparent; border: none; padding: 0px; }
+            QPushButton { background: #E5E7EB; color: #374151; border: none; border-radius: 6px; padding: 7px 14px; font-weight: bold; }
+            QPushButton:hover { background: #D1D5DB; }
+            QPushButton#installUpdate { background: #10B981; color: white; }
+            QPushButton#installUpdate:hover { background: #059669; }
+        """)
+        self.diagnostic_title.setText(self.tr("diagnostic_title"))
+        self.btn_retry.setText(self.tr("retry"))
+        self.btn_install.setText(self.tr("install"))
+        self.start_check()
+
+    def tr(self, key, **kwargs):
+        return self.text[key].format(**kwargs)
+
+    def _set_badge(self, text, background, color):
+        self.status_badge.setText(text)
+        self.status_badge.setStyleSheet(f"background: {background}; color: {color}; border-radius: 10px; padding: 3px 9px; font-size: 11px; font-weight: bold;")
+
+    def start_check(self):
+        if self.check_worker and self.check_worker.isRunning(): return
+        self._set_badge(self.tr("checking_badge"), "#E0E7FF", "#3730A3")
+        self.title_lbl.setText(self.tr("checking_title"))
+        self.subtitle_lbl.setText(self.tr("current_version", version=APP_VERSION))
+        self.notes_lbl.setText(self.tr("checking_section"))
+        self.notes_browser.setPlainText(self.tr("checking_body"))
+        self.diagnostic_lbl.setText(self.tr("api_connecting"))
+        self.btn_retry.setVisible(False)
+        self.btn_install.setVisible(False)
+        self.btn_cancel.setText(self.tr("close"))
+        self.check_worker = UpdateWorker(mode='check', lang_code=self.lang_code)
+        self.check_worker.log_signal.connect(self.on_check_log)
         self.check_worker.check_finished_signal.connect(self.on_check_done)
         self.check_worker.start()
 
-    def on_check_done(self, has_update, version, url, filename, body):
-        if has_update:
-            self.title_lbl.setText("🎉 New version available!")
-            self.subtitle_lbl.setText(f"yt-dlp GUI {version} is now available - you have {APP_VERSION}.")
-            self.notes_lbl.setVisible(True)
-            self.notes_browser.setMarkdown(body if body else "*No release notes provided.*")
-            self.notes_browser.setVisible(True)
+    def on_check_log(self, message):
+        self.diagnostic_lbl.setText(message.replace("｜", "\n"))
+
+    def on_check_done(self, state, version, url, filename, body, diagnostic):
+        self.diagnostic_lbl.setText(diagnostic)
+        if state == "update":
+            version_label = version if version.lower().startswith("v") else f"v{version}"
+            self._set_badge(self.tr("update_badge"), "#DCFCE7", "#166534")
+            self.title_lbl.setText(self.tr("update_title"))
+            self.subtitle_lbl.setText(self.tr("update_subtitle", version=version_label, current=APP_VERSION))
+            self.notes_lbl.setText(self.tr("update_section"))
+            self.notes_browser.setMarkdown(body if body else self.tr("no_notes"))
+            self.btn_retry.setVisible(False)
             self.btn_install.setVisible(True)
-            self.btn_cancel.setText("Remind me later")
-            
-            self.url = url
-            self.filename = filename
-            self.new_version = version
+            self.btn_cancel.setText(self.tr("later"))
+            self.url, self.filename, self.new_version = url, filename, version
+        elif state == "up_to_date":
+            self._set_badge(self.tr("up_to_date_badge"), "#DCFCE7", "#166534")
+            self.title_lbl.setText(self.tr("up_to_date_title"))
+            self.subtitle_lbl.setText(self.tr("up_to_date_subtitle", version=APP_VERSION))
+            self.notes_lbl.setText(self.tr("up_to_date_section"))
+            self.notes_browser.setPlainText(self.tr("up_to_date_body"))
+            self.btn_retry.setVisible(False)
+            self.btn_install.setVisible(False)
         else:
-            self.title_lbl.setText("✅ You're up to date!")
-            self.subtitle_lbl.setText(f"yt-dlp GUI {APP_VERSION} is currently the newest version available.")
+            self._set_badge(self.tr("error_badge"), "#FEE2E2", "#B91C1C")
+            self.title_lbl.setText(self.tr("error_title"))
+            self.subtitle_lbl.setText(self.tr("error_subtitle"))
+            self.notes_lbl.setText(self.tr("error_section"))
+            self.notes_browser.setHtml(self.tr("error_body", url=UPDATE_RELEASES_URL))
+            self.btn_install.setVisible(False)
+            self.btn_retry.setVisible(True)
 
     def start_download(self):
         self.btn_install.setEnabled(False)
         self.btn_cancel.setEnabled(False)
-        self.title_lbl.setText("Downloading update...")
-        self.subtitle_lbl.setText(f"File: {self.filename}")
-        self.notes_lbl.setVisible(False)
-        self.notes_browser.setVisible(False)
+        self._set_badge(self.tr("downloading_badge"), "#DBEAFE", "#1D4ED8")
+        self.title_lbl.setText(self.tr("downloading_title"))
+        self.subtitle_lbl.setText(self.tr("downloading_file", filename=self.filename))
+        self.notes_lbl.setText(self.tr("downloading_section"))
+        self.notes_browser.setPlainText(self.tr("downloading_body"))
         self.pbar.setVisible(True)
-        import os
         tmp_dir = os.path.join(DATA_DIR, "tmp")
         os.makedirs(tmp_dir, exist_ok=True)
         save_path = os.path.join(tmp_dir, self.filename)
-        
-        self.dl_worker = UpdateWorker(mode='download', url=self.url, filepath=save_path)
+        self.dl_worker = UpdateWorker(mode='download', url=self.url, filepath=save_path, lang_code=self.lang_code)
         self.dl_worker.progress_signal.connect(self.update_progress)
         self.dl_worker.download_finished_signal.connect(self.download_finished)
         self.dl_worker.start()
-        
+
     def update_progress(self, dl_size, total):
         if total > 0:
             self.pbar.setMaximum(total)
             self.pbar.setValue(dl_size)
-            
+
     def download_finished(self, success, filepath):
         if success:
             self.accept()
-            import platform, os, sys
-            from PyQt6.QtWidgets import QMessageBox, QApplication
             if platform.system() == "Windows":
                 bat_path = os.path.join(BASE_DIR, "update.bat")
                 exe_name = os.path.basename(sys.executable)
@@ -453,32 +610,24 @@ class UpdateDialog(QDialog):
                     QApplication.quit()
                 else:
                     QMessageBox.information(self, "Update Complete", f"Downloaded to {filepath}\n(Manual replacement needed since running as script)")
+            elif platform.system() == "Darwin" and filepath.endswith(".dmg"):
+                from PyQt6.QtCore import QSettings
+                settings = QSettings("Antigravity", "yt-dlp-gui")
+                settings.setValue("pending_mac_update_path", filepath)
+                settings.setValue("pending_mac_update_version", self.new_version)
+                reply = QMessageBox.question(self, "💡 更新下載完成 / Update Complete", f"新版本 (v{self.new_version}) 的更新檔（DMG）已成功下載！\n\n您要現在開啟它來進行覆蓋安裝嗎？", QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.Yes)
+                if reply == QMessageBox.StandardButton.Yes:
+                    import subprocess
+                    subprocess.run(["open", filepath])
+                    QApplication.quit()
             else:
-                if platform.system() == "Darwin" and filepath.endswith(".dmg"):
-                    from PyQt6.QtCore import QSettings
-                    settings = QSettings("Antigravity", "yt-dlp-gui")
-                    settings.setValue("pending_mac_update_path", filepath)
-                    settings.setValue("pending_mac_update_version", self.new_version)
-                    
-                    reply = QMessageBox.question(
-                        self, 
-                        "💡 更新下載完成 / Update Complete", 
-                        f"新版本 (v{self.new_version}) 的更新檔（DMG）已成功下載！\n\n您要現在開啟它來進行覆蓋安裝嗎？\n（選擇「現在安裝」會自動掛載更新檔並關閉此程式，以方便您進行覆蓋；選擇「稍後詢問」則下次啟動時會再次提醒您）",
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                        QMessageBox.StandardButton.Yes
-                    )
-                    
-                    if reply == QMessageBox.StandardButton.Yes:
-                        import subprocess
-                        subprocess.run(["open", filepath])  # 自動開啟並掛載 DMG
-                        QApplication.quit()
-                else:
-                    QMessageBox.information(self, "Update Complete", f"Downloaded to {filepath}\nPlease manually replace the application.")
+                QMessageBox.information(self, "Update Complete", f"Downloaded to {filepath}\nPlease manually replace the application.")
         else:
-            self.title_lbl.setText("❌ Download failed!")
+            self._set_badge(self.tr("download_failed_badge"), "#FEE2E2", "#B91C1C")
+            self.title_lbl.setText(self.tr("download_failed_title"))
+            self.subtitle_lbl.setText(self.tr("download_failed_subtitle"))
             self.btn_cancel.setEnabled(True)
-            self.btn_cancel.setText("Close")
-
+            self.btn_install.setEnabled(True)
 class ThumbnailWorker(QThread):
     finished_signal = pyqtSignal(str, str)
     def __init__(self, video_id, url):

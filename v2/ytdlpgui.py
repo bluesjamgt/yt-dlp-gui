@@ -1,4 +1,4 @@
-# yt-dlp Downloader GUI v2.1.1 (Auto-Updater added, Native Checkbox, MenuBar I18N, Fixed Download)
+# yt-dlp Downloader GUI v2.1.2 (Auto-Updater added, Native Checkbox, MenuBar I18N, Fixed Download)
 import os
 import sys
 import json
@@ -37,7 +37,7 @@ if platform.system() == "Darwin":
     except ImportError: pass
     ssl._create_default_https_context = ssl._create_unverified_context
 
-APP_VERSION = "2.1.1"
+APP_VERSION = "2.1.2"
 if getattr(sys, 'frozen', False):
     exe_dir = os.path.dirname(sys.executable)
     if "Contents/MacOS" in exe_dir:
